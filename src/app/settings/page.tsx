@@ -114,7 +114,7 @@ export default function SettingsPage() {
 
   return (
     <section className="grid gap-5 lg:grid-cols-[420px_minmax(0,1fr)]">
-      <div className="panel h-fit rounded-lg p-5">
+      <div className="panel h-fit rounded-lg p-6">
         <div className="flex items-center gap-2">
           <Settings className="h-6 w-6 text-[var(--teal)]" />
           <h2 className="text-2xl font-black">设置</h2>
@@ -124,54 +124,66 @@ export default function SettingsPage() {
           API Key 保存在浏览器 localStorage 中，仅适合个人本地使用。
         </div>
 
-        <div className="mt-5 space-y-3">
-          <input
-            className="field rounded-md px-3 py-2"
-            placeholder="配置名称"
-            value={profileDraft.name}
-            onChange={(event) =>
-              setProfileDraft((draft) => ({
-                ...draft,
-                name: event.target.value,
-              }))
-            }
-          />
-          <input
-            className="field rounded-md px-3 py-2"
-            placeholder="Base URL，例如 https://api.openai.com/v1"
-            value={profileDraft.baseUrl}
-            onChange={(event) =>
-              setProfileDraft((draft) => ({
-                ...draft,
-                baseUrl: event.target.value,
-              }))
-            }
-          />
-          <input
-            className="field rounded-md px-3 py-2"
-            placeholder="Model"
-            value={profileDraft.model}
-            onChange={(event) =>
-              setProfileDraft((draft) => ({
-                ...draft,
-                model: event.target.value,
-              }))
-            }
-          />
-          <input
-            className="field rounded-md px-3 py-2"
-            placeholder="API Key"
-            type="password"
-            value={profileDraft.apiKey}
-            onChange={(event) =>
-              setProfileDraft((draft) => ({
-                ...draft,
-                apiKey: event.target.value,
-              }))
-            }
-          />
+        <div className="mt-6 space-y-4">
+          <label className="form-field">
+            <span>配置名称</span>
+            <input
+              className="field rounded-md px-3 py-2"
+              placeholder="例如 OpenAI、Gemini、DeepSeek"
+              value={profileDraft.name}
+              onChange={(event) =>
+                setProfileDraft((draft) => ({
+                  ...draft,
+                  name: event.target.value,
+                }))
+              }
+            />
+          </label>
+          <label className="form-field">
+            <span>Base URL</span>
+            <input
+              className="field rounded-md px-3 py-2"
+              placeholder="例如 https://api.openai.com/v1"
+              value={profileDraft.baseUrl}
+              onChange={(event) =>
+                setProfileDraft((draft) => ({
+                  ...draft,
+                  baseUrl: event.target.value,
+                }))
+              }
+            />
+          </label>
+          <label className="form-field">
+            <span>模型名称</span>
+            <input
+              className="field rounded-md px-3 py-2"
+              placeholder="例如 gpt-4o-mini"
+              value={profileDraft.model}
+              onChange={(event) =>
+                setProfileDraft((draft) => ({
+                  ...draft,
+                  model: event.target.value,
+                }))
+              }
+            />
+          </label>
+          <label className="form-field">
+            <span>API Key</span>
+            <input
+              className="field rounded-md px-3 py-2"
+              placeholder="填入对应服务商的 API Key"
+              type="password"
+              value={profileDraft.apiKey}
+              onChange={(event) =>
+                setProfileDraft((draft) => ({
+                  ...draft,
+                  apiKey: event.target.value,
+                }))
+              }
+            />
+          </label>
           <button
-            className="flex w-full items-center justify-center gap-2 rounded-md bg-[var(--teal)] px-4 py-2.5 font-bold text-white transition hover:bg-[var(--teal-dark)]"
+            className="flex w-full items-center justify-center gap-2 rounded-md bg-[var(--teal)] px-4 py-3 font-bold text-white transition hover:bg-[var(--teal-dark)]"
             onClick={saveProfile}
             type="button"
           >

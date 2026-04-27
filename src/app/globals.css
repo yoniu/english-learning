@@ -2,48 +2,60 @@
 
 :root {
   color-scheme: light;
-  --paper: #f5f5f5;
+  --paper: #f7f7f5;
   --paper-strong: #ffffff;
-  --ink: #111111;
-  --muted: #666666;
-  --line: #d9d9d9;
-  --surface: rgba(255, 255, 255, 0.88);
-  --surface-soft: rgba(255, 255, 255, 0.64);
-  --surface-hover: rgba(255, 255, 255, 0.96);
-  --overlay: rgba(0, 0, 0, 0.5);
-  --focus: rgba(0, 0, 0, 0.18);
-  --soft-mark: rgba(0, 0, 0, 0.06);
-  --strong-mark: rgba(0, 0, 0, 0.16);
-  --danger-surface: rgba(0, 0, 0, 0.06);
-  --danger-line: rgba(0, 0, 0, 0.2);
-  --button: #111111;
-  --button-hover: #000000;
+  --ink: #242424;
+  --muted: #747474;
+  --line: #deded9;
+  --surface: rgba(255, 255, 255, 0.82);
+  --surface-soft: rgba(255, 255, 255, 0.58);
+  --surface-hover: rgba(255, 255, 255, 0.94);
+  --overlay: rgba(25, 25, 25, 0.42);
+  --focus: rgba(74, 74, 74, 0.18);
+  --soft-mark: rgba(36, 36, 36, 0.055);
+  --strong-mark: rgba(36, 36, 36, 0.13);
+  --danger-surface: rgba(226, 75, 62, 0.11);
+  --danger-line: rgba(226, 75, 62, 0.34);
+  --button: #323232;
+  --button-hover: #1f1f1f;
   --on-button: #ffffff;
-  --teal: var(--button);
-  --teal-dark: var(--button-hover);
-  --coral: var(--ink);
-  --gold: var(--muted);
+  --accent: #525252;
+  --accent-strong: #2f2f2f;
+  --mark: #d48a00;
+  --mark-surface: rgba(212, 138, 0, 0.15);
+  --mistake: #e24b3e;
+  --mistake-surface: rgba(226, 75, 62, 0.12);
+  --teal: var(--accent);
+  --teal-dark: var(--accent-strong);
+  --coral: var(--mistake);
+  --gold: var(--mark);
 }
 
 html[data-theme="dark"] {
   color-scheme: dark;
-  --paper: #0b0b0b;
-  --paper-strong: #151515;
-  --ink: #f4f4f4;
-  --muted: #a8a8a8;
-  --line: #303030;
-  --surface: rgba(20, 20, 20, 0.9);
-  --surface-soft: rgba(28, 28, 28, 0.78);
-  --surface-hover: rgba(38, 38, 38, 0.96);
-  --overlay: rgba(0, 0, 0, 0.72);
-  --focus: rgba(255, 255, 255, 0.24);
-  --soft-mark: rgba(255, 255, 255, 0.08);
-  --strong-mark: rgba(255, 255, 255, 0.18);
-  --danger-surface: rgba(255, 255, 255, 0.08);
-  --danger-line: rgba(255, 255, 255, 0.22);
-  --button: #f4f4f4;
-  --button-hover: #ffffff;
-  --on-button: #0b0b0b;
+  --paper: #141414;
+  --paper-strong: #1e1e1e;
+  --ink: #ececea;
+  --muted: #a6a6a2;
+  --line: #343432;
+  --surface: rgba(30, 30, 30, 0.86);
+  --surface-soft: rgba(38, 38, 38, 0.72);
+  --surface-hover: rgba(48, 48, 48, 0.94);
+  --overlay: rgba(0, 0, 0, 0.66);
+  --focus: rgba(236, 236, 234, 0.18);
+  --soft-mark: rgba(236, 236, 234, 0.075);
+  --strong-mark: rgba(236, 236, 234, 0.15);
+  --danger-surface: rgba(255, 105, 92, 0.15);
+  --danger-line: rgba(255, 105, 92, 0.4);
+  --button: #deded8;
+  --button-hover: #f2f2ef;
+  --on-button: #141414;
+  --accent: #b9b9b2;
+  --accent-strong: #ececea;
+  --mark: #ffb02e;
+  --mark-surface: rgba(255, 176, 46, 0.16);
+  --mistake: #ff695c;
+  --mistake-surface: rgba(255, 105, 92, 0.16);
 }
 
 * {
@@ -92,12 +104,12 @@ a:focus-visible {
 .panel {
   border: 1px solid var(--line);
   background: var(--surface);
-  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 14px 48px rgba(0, 0, 0, 0.055);
   backdrop-filter: blur(18px);
 }
 
 html[data-theme="dark"] .panel {
-  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.28);
+  box-shadow: 0 14px 48px rgba(0, 0, 0, 0.2);
 }
 
 .field {
@@ -105,6 +117,7 @@ html[data-theme="dark"] .panel {
   border: 1px solid var(--line);
   background: var(--paper-strong);
   color: var(--ink);
+  min-height: 3.35rem;
   transition:
     border-color 160ms ease,
     box-shadow 160ms ease,
@@ -118,6 +131,19 @@ html[data-theme="dark"] .panel {
 .field:focus {
   border-color: var(--ink);
   box-shadow: 0 0 0 4px var(--focus);
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.form-field > span {
+  color: var(--muted);
+  font-size: 0.875rem;
+  font-weight: 900;
+  line-height: 1.2;
 }
 
 .word-input {
@@ -138,12 +164,12 @@ html[data-theme="dark"] .panel {
 }
 
 .word-input.correct {
-  border-color: var(--ink);
+  border-color: var(--accent);
   background: var(--soft-mark);
 }
 
 .word-input.wrong {
-  border-color: var(--ink);
+  border-color: var(--mistake);
   background: repeating-linear-gradient(
     -45deg,
     var(--danger-surface),
@@ -199,10 +225,10 @@ html[data-theme="dark"] .panel {
   width: 2.5rem;
   flex: 0 0 2.5rem;
   place-items: center;
-  border: 1px solid var(--ink);
+  border: 1px solid var(--accent);
   border-radius: 0.5rem;
-  background: var(--ink);
-  color: var(--paper);
+  background: var(--button);
+  color: var(--on-button);
   font-size: 0.9rem;
   font-weight: 900;
 }
@@ -321,7 +347,7 @@ html[data-theme="dark"] .panel {
 
 .nav-link:hover,
 .nav-link.active {
-  border-color: var(--ink);
+  border-color: var(--accent);
   background: var(--paper-strong);
   color: var(--ink);
 }
@@ -453,11 +479,14 @@ html[data-theme="dark"] .panel {
 .bg-\[rgba\(15\,109\,115\,0\.12\)\],
 .bg-\[rgba\(15\,109\,115\,0\.13\)\],
 .bg-\[rgba\(15\,109\,115\,0\.14\)\],
+.bg-\[rgba\(201\,155\,47\,0\.16\)\] {
+  background-color: var(--mark-surface) !important;
+}
+
 .bg-\[rgba\(200\,84\,56\,0\.08\)\],
 .bg-\[rgba\(200\,84\,56\,0\.1\)\],
-.bg-\[rgba\(200\,84\,56\,0\.12\)\],
-.bg-\[rgba\(201\,155\,47\,0\.16\)\] {
-  background-color: var(--soft-mark) !important;
+.bg-\[rgba\(200\,84\,56\,0\.12\)\] {
+  background-color: var(--mistake-surface) !important;
 }
 
 .bg-\[rgba\(23\,49\,45\,0\.42\)\] {

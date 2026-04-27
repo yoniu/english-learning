@@ -260,7 +260,7 @@ export default function PracticeDetailPage() {
             {currentItem.zhHint}
           </p>
           {showTextHint ? (
-            <p className="mt-2 text-lg font-bold text-[var(--coral)]">
+            <p className="mt-2 text-lg font-bold text-[var(--accent-strong)]">
               {currentItem.text}
             </p>
           ) : null}
@@ -288,7 +288,7 @@ export default function PracticeDetailPage() {
             )}
           </button>
           <button
-            className="rounded-md border border-[rgba(23,49,45,0.14)] bg-white/70 p-2 text-[var(--coral)] hover:bg-white"
+            className="rounded-md border border-[rgba(23,49,45,0.14)] bg-white/70 p-2 text-[var(--muted)] hover:bg-white"
             onClick={toggleTextHint}
             title="显示或隐藏英文提示"
             type="button"

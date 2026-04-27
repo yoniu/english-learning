@@ -107,10 +107,10 @@ export function GeneratePracticeModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(23,49,45,0.42)] p-4">
-      <section className="panel w-full max-w-xl rounded-lg p-5 shadow-2xl">
+      <section className="panel w-full max-w-2xl rounded-lg p-6 shadow-2xl sm:p-7">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-sm font-black uppercase tracking-[0.16em] text-[var(--coral)]">
+            <p className="text-sm font-black uppercase tracking-[0.16em] text-[var(--muted)]">
               Generate
             </p>
             <h2 className="mt-1 text-2xl font-black">生成练习集合</h2>
@@ -125,44 +125,53 @@ export function GeneratePracticeModal({
           </button>
         </div>
 
-        <div className="mt-5 space-y-4">
+        <div className="mt-7 space-y-5">
           <div>
             <label className="text-sm font-black text-[var(--muted)]">
               当前 AI 配置
             </label>
-            <div className="mt-2 rounded-md border border-[rgba(23,49,45,0.12)] bg-white/58 px-3 py-2 text-sm font-bold">
+            <div className="mt-2.5 rounded-md border border-[rgba(23,49,45,0.12)] bg-white/58 px-4 py-3 text-sm font-bold">
               {activeProfile ? activeProfile.name : "尚未配置"}
             </div>
           </div>
 
-          <input
-            className="field rounded-md px-3 py-2"
-            placeholder="主题，例如 travel, interviews, cooking"
-            value={topic}
-            onChange={(event) => setTopic(event.target.value)}
-          />
-
-          <div className="grid gap-3 sm:grid-cols-[1fr_120px]">
-            <select
-              className="field rounded-md px-3 py-2"
-              value={level}
-              onChange={(event) => setLevel(event.target.value)}
-            >
-              {levelOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+          <label className="form-field">
+            <span>练习主题</span>
             <input
               className="field rounded-md px-3 py-2"
-              max={20}
-              min={3}
-              type="number"
-              value={count}
-              onBlur={() => setCount((value) => clampCount(value))}
-              onChange={(event) => setCount(Number(event.target.value))}
+              placeholder="例如 travel, interviews, cooking"
+              value={topic}
+              onChange={(event) => setTopic(event.target.value)}
             />
+          </label>
+
+          <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_12rem]">
+            <label className="form-field">
+              <span>难度等级</span>
+              <select
+                className="field rounded-md px-3 py-2"
+                value={level}
+                onChange={(event) => setLevel(event.target.value)}
+              >
+                {levelOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="form-field">
+              <span>生成数量</span>
+              <input
+                className="field rounded-md px-3 py-2"
+                max={20}
+                min={3}
+                type="number"
+                value={count}
+                onBlur={() => setCount((value) => clampCount(value))}
+                onChange={(event) => setCount(Number(event.target.value))}
+              />
+            </label>
           </div>
 
           {error ? (
@@ -171,16 +180,16 @@ export function GeneratePracticeModal({
             </div>
           ) : null}
 
-          <div className="flex flex-col gap-2 sm:flex-row sm:justify-between">
+          <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:items-center sm:justify-between">
             <Link
-              className="rounded-md border border-[rgba(23,49,45,0.14)] bg-white/70 px-4 py-2 text-center font-bold text-[var(--ink)] hover:bg-white"
+              className="rounded-md border border-[rgba(23,49,45,0.14)] bg-white/70 px-4 py-3 text-center font-bold text-[var(--ink)] hover:bg-white"
               href="/settings"
               onClick={onClose}
             >
               管理 AI 配置
             </Link>
             <button
-              className="flex items-center justify-center gap-2 rounded-md bg-[var(--button)] px-5 py-2.5 font-black text-white transition hover:bg-[var(--button-hover)] disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex items-center justify-center gap-2 rounded-md bg-[var(--button)] px-5 py-3 font-black text-white transition hover:bg-[var(--button-hover)] disabled:cursor-not-allowed disabled:opacity-60"
               disabled={generating}
               onClick={handleGenerate}
               type="button"
