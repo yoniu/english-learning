@@ -315,7 +315,7 @@ export default function MistakesPage() {
               {mistake.listId ? (
                 <Link
                   className="mt-4 inline-flex rounded-md border border-[rgba(23,49,45,0.14)] bg-white/70 px-3 py-2 text-sm font-bold text-[var(--ink)] hover:bg-white"
-                  href={`/practice/${mistake.listId}`}
+                  href={`/practice?listId=${encodeURIComponent(mistake.listId)}`}
                 >
                   {getListTitle(mistake.listId)}
                 </Link>

@@ -43,7 +43,7 @@ export default function MarkedPage() {
 
     if (index >= 0) {
       await saveCurrentIndex(item.listId, index);
-      router.push(`/practice/${item.listId}`);
+      router.push(`/practice?listId=${encodeURIComponent(item.listId)}`);
     }
   }
 

@@ -100,7 +100,7 @@ export default function PracticeListPage() {
               </div>
               <Link
                 className="mt-5 flex w-full items-center justify-center gap-2 rounded-md bg-[var(--teal)] px-4 py-2.5 font-black text-white hover:bg-[var(--teal-dark)]"
-                href={`/practice/${list.id}`}
+                href={`/practice?listId=${encodeURIComponent(list.id)}`}
                 onClick={() => void saveActivePracticeListId(list.id)}
               >
                 <Keyboard className="h-4 w-4" />
