@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -7,8 +8,15 @@ import {
   BookmarkCheck,
   Keyboard,
   ListChecks,
+  PanelLeftClose,
+  PanelLeftOpen,
   Settings,
 } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
+import {
+  loadSidebarCollapsed,
+  saveSidebarCollapsed,
+} from "@/lib/local-settings";
 
 const navItems = [
   { href: "/", label: "练习列表", icon: ListChecks },
@@ -20,19 +28,46 @@ const navItems = [
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const [collapsed, setCollapsed] = useState(false);
+
+  useEffect(() => {
+    setCollapsed(loadSidebarCollapsed());
+  }, []);
+
+  function toggleCollapsed() {
+    setCollapsed((current) => {
+      const next = !current;
+      saveSidebarCollapsed(next);
+      return next;
+    });
+  }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-[1500px] flex-col gap-6 px-4 py-5 sm:px-6 lg:px-8">
-      <header className="flex flex-col justify-between gap-4 border-b border-[rgba(23,49,45,0.14)] pb-5 xl:flex-row xl:items-end">
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--coral)]">
-            AI English Spelling
-          </p>
-          <h1 className="mt-2 text-3xl font-black text-[var(--ink)] sm:text-5xl">
-            主题生成，逐词拼写
-          </h1>
+    <main className={`app-frame ${collapsed ? "nav-collapsed" : ""}`}>
+      <aside className="app-sidebar">
+        <div className="sidebar-header">
+          <Link className="brand-link" href="/" title="AI English Spelling">
+            <span className="brand-mark">AI</span>
+            <span className="side-label">
+              <span className="brand-title">English Spelling</span>
+              <span className="brand-subtitle">主题生成，逐词拼写</span>
+            </span>
+          </Link>
+          <button
+            className="sidebar-toggle"
+            onClick={toggleCollapsed}
+            title={collapsed ? "展开侧栏" : "收缩侧栏"}
+            type="button"
+          >
+            {collapsed ? (
+              <PanelLeftOpen className="h-5 w-5" />
+            ) : (
+              <PanelLeftClose className="h-5 w-5" />
+            )}
+          </button>
         </div>
-        <nav className="flex flex-wrap gap-2">
+
+        <nav className="sidebar-nav">
           {navItems.map((item) => {
             const Icon = item.icon;
             const active =
@@ -40,22 +75,24 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
             return (
               <Link
-                className={`flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-black transition ${
-                  active
-                    ? "border-[rgba(15,109,115,0.42)] bg-[rgba(15,109,115,0.14)] text-[var(--teal-dark)]"
-                    : "border-[rgba(23,49,45,0.12)] bg-white/55 text-[var(--muted)] hover:bg-white"
-                }`}
+                className={`nav-link ${active ? "active" : ""}`}
                 href={item.href}
                 key={item.href}
+                title={item.label}
               >
-                <Icon className="h-4 w-4" />
-                {item.label}
+                <Icon className="h-4 w-4 shrink-0" />
+                <span className="side-label">{item.label}</span>
               </Link>
             );
           })}
         </nav>
-      </header>
-      {children}
+
+        <div className="sidebar-footer">
+          <ThemeToggle />
+        </div>
+      </aside>
+
+      <section className="app-content">{children}</section>
     </main>
   );
 }

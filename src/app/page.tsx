@@ -55,7 +55,7 @@ export default function PracticeListPage() {
           </p>
         </div>
         <button
-          className="flex items-center justify-center gap-2 rounded-md bg-[var(--coral)] px-5 py-3 font-black text-white transition hover:bg-[#a8422b]"
+          className="flex items-center justify-center gap-2 rounded-md bg-[var(--button)] px-5 py-3 font-black text-white transition hover:bg-[var(--button-hover)]"
           onClick={() => setModalOpen(true)}
           type="button"
         >

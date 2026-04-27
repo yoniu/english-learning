@@ -13,7 +13,23 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="zh-CN">
+    <html lang="zh-CN" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function () {
+                try {
+                  var mode = localStorage.getItem("english-learning.themeMode") || "system";
+                  var resolved = mode === "dark" || (mode === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light";
+                  document.documentElement.dataset.themeMode = mode;
+                  document.documentElement.dataset.theme = resolved;
+                } catch (_) {}
+              })();
+            `,
+          }}
+        />
+      </head>
       <body>
         <AppShell>{children}</AppShell>
       </body>

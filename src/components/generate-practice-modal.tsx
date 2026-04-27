@@ -180,7 +180,7 @@ export function GeneratePracticeModal({
               管理 AI 配置
             </Link>
             <button
-              className="flex items-center justify-center gap-2 rounded-md bg-[var(--coral)] px-5 py-2.5 font-black text-white transition hover:bg-[#a8422b] disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex items-center justify-center gap-2 rounded-md bg-[var(--button)] px-5 py-2.5 font-black text-white transition hover:bg-[var(--button-hover)] disabled:cursor-not-allowed disabled:opacity-60"
               disabled={generating}
               onClick={handleGenerate}
               type="button"

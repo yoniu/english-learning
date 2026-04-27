@@ -10,6 +10,7 @@ A pure frontend English spelling practice app built with Next.js, TypeScript, an
 - Practice one word per input with blur validation and Enter checks.
 - Use `Ctrl+S` for speech, `Ctrl+M` to mark, and `Ctrl+D` to show or hide the English text hint.
 - Use separate pages for generated practice lists, active practice, marked items, mistakes, and settings.
+- Switch between system, light, and dark themes.
 
 ## Run
 

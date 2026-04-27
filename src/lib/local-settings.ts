@@ -3,6 +3,10 @@ import type { AiProfile } from "@/types/app";
 const AI_PROFILES_KEY = "english-learning.aiProfiles";
 const ACTIVE_PROFILE_KEY = "english-learning.activeProfileId";
 const SHOW_HINT_KEY = "english-learning.showTextHint";
+const THEME_MODE_KEY = "english-learning.themeMode";
+const SIDEBAR_COLLAPSED_KEY = "english-learning.sidebarCollapsed";
+
+export type ThemeMode = "system" | "light" | "dark";
 
 export function loadAiProfiles(): AiProfile[] {
   if (typeof window === "undefined") {
@@ -44,4 +48,46 @@ export function loadShowTextHint(): boolean {
 
 export function saveShowTextHint(value: boolean): void {
   window.localStorage.setItem(SHOW_HINT_KEY, String(value));
+}
+
+export function loadThemeMode(): ThemeMode {
+  if (typeof window === "undefined") {
+    return "system";
+  }
+
+  const value = window.localStorage.getItem(THEME_MODE_KEY);
+  return value === "light" || value === "dark" || value === "system"
+    ? value
+    : "system";
+}
+
+export function saveThemeMode(value: ThemeMode): void {
+  window.localStorage.setItem(THEME_MODE_KEY, value);
+}
+
+export function resolveThemeMode(value: ThemeMode): "light" | "dark" {
+  if (value !== "system") {
+    return value;
+  }
+
+  return window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
+}
+
+export function applyThemeMode(value: ThemeMode): void {
+  document.documentElement.dataset.themeMode = value;
+  document.documentElement.dataset.theme = resolveThemeMode(value);
+}
+
+export function loadSidebarCollapsed(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return window.localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "true";
+}
+
+export function saveSidebarCollapsed(value: boolean): void {
+  window.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(value));
 }
