@@ -1,35 +1,45 @@
-# AI English Spelling
+# AI 英语拼写练习
 
-A pure frontend English spelling practice app built with Next.js, TypeScript, and Tailwind CSS.
+一个基于 Next.js、TypeScript 和 Tailwind CSS 的纯前端英语拼写练习应用。
 
-## Features
+## 功能
 
-- Save and switch multiple OpenAI-compatible AI profiles locally.
-- Generate mixed English phrases and short sentences by topic.
-- Store practice items, progress, mistakes, and marks in IndexedDB.
-- Practice one word per input with blur validation and Enter checks.
-- Use `Ctrl+S` for speech, `Ctrl+M` to mark, and `Ctrl+D` to show or hide the English text hint.
-- Use separate pages for generated practice lists, active practice, marked items, mistakes, and settings.
-- Switch between system, light, and dark themes.
+- 支持在本地保存并切换多个 OpenAI-compatible AI 配置。
+- 根据主题生成由英文短语和短句组成的练习列表。
+- 使用 IndexedDB 保存练习列表、练习进度、错词和标记内容。
+- 练习时每个单词对应一个输入框，失焦即时校验，按 Enter 检查整条内容。
+- 支持快捷键：`Ctrl+S` 播放系统语音，`Ctrl+M` 标记当前内容，`Ctrl+D` 显示或隐藏英文提示。
+- 提供练习列表、练习、短语标记、错词和设置等独立页面。
+- 支持跟随系统、日间和夜间三种主题模式。
 
-## Run
+## 运行
 
 ```bash
 pnpm install
 pnpm dev
 ```
 
-Open http://127.0.0.1:3000.
+打开 http://127.0.0.1:3000。
 
-## Pages
+## 页面
 
-- `/` Practice lists, with a modal for generating a new list.
-- `/practice/[listId]` Active spelling practice for a selected list.
-- `/practice` Opens the latest active list when available.
-- `/marked` Marked phrases and sentences.
-- `/mistakes` Mistake records.
-- `/settings` AI profile settings.
+- `/`：练习列表页面，可通过弹窗生成新的练习列表。
+- `/practice/[listId]`：选中练习列表后的练习页面。
+- `/practice`：自动打开最近使用的练习列表。
+- `/marked`：已标记的短语和短句。
+- `/mistakes`：错词记录。
+- `/settings`：AI 配置设置。
 
-## Local Data
+## 本地数据
 
-AI profiles are saved in browser localStorage. Learning data is saved in IndexedDB.
+- AI 配置保存在浏览器 `localStorage` 中。
+- 练习列表、练习内容、进度、错词和标记保存在 IndexedDB 中。
+- 这是纯前端应用，API Key 会保存在本地浏览器环境，仅适合个人本地使用。
+
+## 开源声明
+
+本项目由油油维护，个人网站为 https://200011.net。
+
+本项目以 MIT License 开源。你可以自由使用、复制、修改、合并、发布和分发本项目代码，但需要保留原始版权声明和许可证声明。
+
+本项目不提供任何形式的担保。使用者需要自行承担使用、部署以及接入第三方 AI 服务所产生的风险和费用。
