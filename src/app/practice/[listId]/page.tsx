@@ -25,6 +25,7 @@ import {
   loadShowTextHint,
   saveShowTextHint,
 } from "@/lib/local-settings";
+import { primeSpeechSynthesis, speakEnglishText } from "@/lib/speech";
 import { isWordCorrect, tokenizeText } from "@/lib/words";
 import type { PracticeItem, PracticeList } from "@/types/app";
 
@@ -45,6 +46,10 @@ export default function PracticeDetailPage() {
 
   const currentItem = items[currentIndex];
   const tokens = currentItem ? tokenizeText(currentItem.text) : [];
+
+  useEffect(() => {
+    primeSpeechSynthesis();
+  }, []);
 
   useEffect(() => {
     async function hydrate() {
@@ -88,7 +93,7 @@ export default function PracticeDetailPage() {
 
       if (event.ctrlKey && event.key.toLowerCase() === "s") {
         event.preventDefault();
-        speakCurrentItem();
+        void speakCurrentItem();
         return;
       }
 
@@ -172,16 +177,24 @@ export default function PracticeDetailPage() {
     );
   }
 
-  function speakCurrentItem() {
-    if (!currentItem || !("speechSynthesis" in window)) {
-      setError("当前浏览器不支持系统语音播放。");
+  async function speakCurrentItem() {
+    if (!currentItem) {
       return;
     }
 
-    const utterance = new SpeechSynthesisUtterance(currentItem.text);
-    utterance.lang = "en-US";
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(utterance);
+    setError("");
+    setNotice("正在播放英语提示。");
+
+    try {
+      await speakEnglishText(currentItem.text);
+      setNotice("已播放英语提示。");
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "语音播放失败，请检查浏览器语音权限或系统语音设置。",
+      );
+    }
   }
 
   async function toggleCurrentMark() {
@@ -266,17 +279,19 @@ export default function PracticeDetailPage() {
           ) : null}
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button
-            className="rounded-md border border-[rgba(23,49,45,0.14)] bg-white/70 p-2 text-[var(--teal-dark)] hover:bg-white"
-            onClick={speakCurrentItem}
+            className="practice-tool-button text-[var(--teal-dark)]"
+            onClick={() => void speakCurrentItem()}
             title="播放语音"
             type="button"
           >
             <Volume2 className="h-5 w-5" />
+            <span>播放</span>
+            <kbd>Ctrl+S</kbd>
           </button>
           <button
-            className="rounded-md border border-[rgba(23,49,45,0.14)] bg-white/70 p-2 text-[var(--gold)] hover:bg-white"
+            className="practice-tool-button text-[var(--gold)]"
             onClick={() => void toggleCurrentMark()}
             title="标记当前内容"
             type="button"
@@ -286,9 +301,11 @@ export default function PracticeDetailPage() {
             ) : (
               <Bookmark className="h-5 w-5" />
             )}
+            <span>标记</span>
+            <kbd>Ctrl+M</kbd>
           </button>
           <button
-            className="rounded-md border border-[rgba(23,49,45,0.14)] bg-white/70 p-2 text-[var(--muted)] hover:bg-white"
+            className="practice-tool-button text-[var(--muted)]"
             onClick={toggleTextHint}
             title="显示或隐藏英文提示"
             type="button"
@@ -298,6 +315,8 @@ export default function PracticeDetailPage() {
             ) : (
               <Eye className="h-5 w-5" />
             )}
+            <span>提示</span>
+            <kbd>Ctrl+D</kbd>
           </button>
         </div>
       </div>
@@ -350,11 +369,11 @@ export default function PracticeDetailPage() {
             上一条
           </button>
           <button
-            className="rounded-md bg-[var(--teal)] px-5 py-2 font-black text-white hover:bg-[var(--teal-dark)]"
+            className="inline-flex items-center rounded-md bg-[var(--teal)] px-5 py-2 font-black text-white hover:bg-[var(--teal-dark)]"
             onClick={() => void checkCurrentItem()}
             type="button"
           >
-            检查
+            检查 <kbd className="shortcut-key ml-2">Enter</kbd>
           </button>
           <button
             className="rounded-md border border-[rgba(23,49,45,0.16)] bg-white/70 px-4 py-2 font-bold text-[var(--ink)] hover:bg-white disabled:opacity-50"

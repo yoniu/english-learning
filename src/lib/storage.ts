@@ -1,5 +1,6 @@
 import type {
   GeneratedPracticeItem,
+  MistakeAnalysis,
   MistakeRecord,
   PracticeItem,
   PracticeList,
@@ -249,6 +250,7 @@ export async function recordMistakes(
       const id = normalizeWord(mistake.expected);
       const existing = existingById.get(id);
       const next: MistakeRecord = {
+        ...existing,
         id,
         word: mistake.word.trim() || "(blank)",
         expected: mistake.expected,
@@ -267,6 +269,44 @@ export async function recordMistakes(
   }
 
   return loadMistakes();
+}
+
+export async function saveMistakeAnalyses(
+  analyses: Array<{ id: string; aiAnalysis: MistakeAnalysis }>,
+): Promise<MistakeRecord[]> {
+  if (analyses.length === 0) {
+    return loadMistakes();
+  }
+
+  const existingMistakes = await loadMistakes();
+  const existingById = new Map(
+    existingMistakes.map((mistake) => [mistake.id, mistake]),
+  );
+  const db = await openDatabase();
+
+  try {
+    const tx = db.transaction("mistakes", "readwrite");
+    const store = tx.objectStore("mistakes");
+
+    for (const analysis of analyses) {
+      const existing = existingById.get(analysis.id);
+
+      if (existing) {
+        store.put({ ...existing, aiAnalysis: analysis.aiAnalysis });
+      }
+    }
+
+    await transactionToPromise(tx);
+  } finally {
+    db.close();
+  }
+
+  return loadMistakes();
+}
+
+export async function deleteMistake(mistakeId: string): Promise<void> {
+  const store = await getStore("mistakes", "readwrite");
+  await requestToPromise(store.delete(mistakeId));
 }
 
 export async function loadActivePracticeListId(): Promise<string> {

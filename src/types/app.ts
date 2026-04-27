@@ -41,10 +41,17 @@ export type MistakeRecord = {
   listId?: string;
   count: number;
   lastSeenAt: string;
+  aiAnalysis?: MistakeAnalysis;
 };
 
 export type GenerationOptions = {
   topic: string;
   level: string;
   count: number;
+};
+
+export type MistakeAnalysis = {
+  phonetic: string;
+  definition: string;
+  example: string;
 };
