@@ -1,0 +1,96 @@
+@import "tailwindcss";
+
+:root {
+  --paper: #f7f1e7;
+  --paper-strong: #fffaf0;
+  --ink: #17312d;
+  --muted: #64706a;
+  --line: #d8ccb9;
+  --teal: #0f6d73;
+  --teal-dark: #0a4b50;
+  --coral: #c85438;
+  --gold: #c99b2f;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--paper);
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  color: var(--ink);
+  background:
+    linear-gradient(140deg, rgba(15, 109, 115, 0.12), transparent 34%),
+    linear-gradient(24deg, rgba(201, 155, 47, 0.16), transparent 30%),
+    var(--paper);
+  font-family: Aptos, "Trebuchet MS", Verdana, sans-serif;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgba(15, 109, 115, 0.28);
+  outline-offset: 2px;
+}
+
+.panel {
+  border: 1px solid rgba(23, 49, 45, 0.14);
+  background: rgba(255, 250, 240, 0.84);
+  box-shadow: 0 18px 60px rgba(23, 49, 45, 0.08);
+  backdrop-filter: blur(18px);
+}
+
+.field {
+  width: 100%;
+  border: 1px solid rgba(23, 49, 45, 0.18);
+  background: rgba(255, 250, 240, 0.88);
+  color: var(--ink);
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background 160ms ease;
+}
+
+.field:focus {
+  border-color: rgba(15, 109, 115, 0.74);
+  box-shadow: 0 0 0 4px rgba(15, 109, 115, 0.12);
+}
+
+.word-input {
+  width: clamp(4.2rem, 12vw, 8.5rem);
+  border: 2px solid rgba(23, 49, 45, 0.14);
+  background: #fffdf7;
+  text-align: center;
+  transition:
+    transform 140ms ease,
+    border-color 140ms ease,
+    background 140ms ease;
+}
+
+.word-input:focus {
+  transform: translateY(-1px);
+  border-color: rgba(15, 109, 115, 0.72);
+}
+
+.word-input.correct {
+  border-color: rgba(15, 109, 115, 0.86);
+  background: rgba(15, 109, 115, 0.1);
+}
+
+.word-input.wrong {
+  border-color: rgba(200, 84, 56, 0.9);
+  background: rgba(200, 84, 56, 0.1);
+}
