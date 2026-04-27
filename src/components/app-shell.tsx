@@ -14,6 +14,12 @@ import {
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import {
+  applyBackgroundSettings,
+  applyThemeColor,
+  BACKGROUND_SETTINGS_CHANGED_EVENT,
+  type BackgroundSettings,
+  loadBackgroundSettings,
+  loadThemeColor,
   loadSidebarCollapsed,
   saveSidebarCollapsed,
 } from "@/lib/local-settings";
@@ -29,9 +35,37 @@ const navItems = [
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const [backgroundSettings, setBackgroundSettings] =
+    useState<BackgroundSettings>({
+      imageUrl: "",
+      blur: 0,
+      scale: 1,
+      glassBlur: 22,
+      glassOpacity: 0.68,
+    });
 
   useEffect(() => {
     setCollapsed(loadSidebarCollapsed());
+    applyThemeColor(loadThemeColor());
+    const storedBackgroundSettings = loadBackgroundSettings();
+    setBackgroundSettings(storedBackgroundSettings);
+    applyBackgroundSettings(storedBackgroundSettings);
+
+    function handleBackgroundSettingsChanged(event: Event) {
+      const nextSettings = (event as CustomEvent<BackgroundSettings>).detail;
+      setBackgroundSettings(nextSettings);
+      applyBackgroundSettings(nextSettings);
+    }
+
+    window.addEventListener(
+      BACKGROUND_SETTINGS_CHANGED_EVENT,
+      handleBackgroundSettingsChanged,
+    );
+    return () =>
+      window.removeEventListener(
+        BACKGROUND_SETTINGS_CHANGED_EVENT,
+        handleBackgroundSettingsChanged,
+      );
   }, []);
 
   function toggleCollapsed() {
@@ -44,6 +78,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <main className={`app-frame ${collapsed ? "nav-collapsed" : ""}`}>
+      <div aria-hidden="true" className="app-background">
+        <div
+          className="app-background-image"
+          style={{
+            backgroundImage: backgroundSettings.imageUrl
+              ? `url(${JSON.stringify(backgroundSettings.imageUrl)})`
+              : "none",
+            filter: `blur(${backgroundSettings.blur}px)`,
+            transform: `scale(${backgroundSettings.scale})`,
+          }}
+        />
+      </div>
       <aside className="app-sidebar">
         <div className="sidebar-header">
           <Link className="brand-link" href="/" title="AI English Spelling">

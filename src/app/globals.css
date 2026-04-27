@@ -29,6 +29,11 @@
   --teal-dark: var(--accent-strong);
   --coral: var(--mistake);
   --gold: var(--mark);
+  --app-background-image: none;
+  --app-background-blur: 0px;
+  --app-background-scale: 1;
+  --glass-blur: 22px;
+  --glass-opacity: 0.68;
 }
 
 html[data-theme="dark"] {
@@ -38,9 +43,9 @@ html[data-theme="dark"] {
   --ink: #ececea;
   --muted: #a6a6a2;
   --line: #343432;
-  --surface: rgba(30, 30, 30, 0.86);
-  --surface-soft: rgba(38, 38, 38, 0.72);
-  --surface-hover: rgba(48, 48, 48, 0.94);
+  --surface: rgba(30, 30, 30, 0.68);
+  --surface-soft: rgba(38, 38, 38, 0.48);
+  --surface-hover: rgba(48, 48, 48, 0.7);
   --overlay: rgba(0, 0, 0, 0.66);
   --focus: rgba(236, 236, 234, 0.18);
   --soft-mark: rgba(236, 236, 234, 0.075);
@@ -64,16 +69,18 @@ html[data-theme="dark"] {
 
 html {
   height: 100%;
-  background: var(--paper);
+  background: transparent;
 }
 
 body {
+  position: relative;
+  isolation: isolate;
   height: 100%;
   min-height: 100dvh;
   margin: 0;
   overflow: hidden;
   color: var(--ink);
-  background: var(--paper);
+  background: transparent;
   font-family: Aptos, "Trebuchet MS", Verdana, sans-serif;
 }
 
@@ -105,7 +112,7 @@ a:focus-visible {
   border: 1px solid var(--line);
   background: var(--surface);
   box-shadow: 0 14px 48px rgba(0, 0, 0, 0.055);
-  backdrop-filter: blur(18px);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.18);
 }
 
 html[data-theme="dark"] .panel {
@@ -216,12 +223,40 @@ html[data-theme="dark"] .panel {
 }
 
 .app-frame {
+  position: relative;
   display: grid;
   grid-template-columns: 17rem minmax(0, 1fr);
   height: 100dvh;
   width: 100%;
   overflow: hidden;
-  transition: grid-template-columns 180ms ease;
+    transition: grid-template-columns 180ms ease;
+}
+
+.app-background {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  background: var(--paper);
+}
+
+.app-background-image {
+  position: absolute;
+  inset: 0;
+  background-image: var(--app-background-image);
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  filter: blur(var(--app-background-blur));
+  transform: scale(var(--app-background-scale));
+}
+
+.app-background::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--paper) 54%, transparent);
 }
 
 .app-frame.nav-collapsed {
@@ -229,12 +264,15 @@ html[data-theme="dark"] .panel {
 }
 
 .app-sidebar {
+  position: relative;
+  z-index: 1;
   display: flex;
   min-width: 0;
   flex-direction: column;
   gap: 1rem;
   border-right: 1px solid var(--line);
   background: var(--surface);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.18);
   padding: 0.875rem;
 }
 
@@ -323,6 +361,8 @@ html[data-theme="dark"] .panel {
 }
 
 .app-content {
+  position: relative;
+  z-index: 1;
   min-width: 0;
   height: 100dvh;
   overflow: auto;
@@ -371,6 +411,7 @@ html[data-theme="dark"] .panel {
   border: 1px solid var(--line);
   border-radius: 0.375rem;
   background: var(--surface-soft);
+  backdrop-filter: blur(var(--glass-blur));
   padding: 0.5rem 0.75rem;
   color: var(--muted);
   font-size: 0.875rem;
@@ -395,6 +436,7 @@ html[data-theme="dark"] .panel {
   border: 1px solid var(--line);
   border-radius: 0.5rem;
   background: var(--surface-soft);
+  backdrop-filter: blur(var(--glass-blur));
   padding: 0.25rem;
 }
 
