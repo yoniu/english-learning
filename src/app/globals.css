@@ -179,6 +179,11 @@ html[data-theme="dark"] .panel {
   );
 }
 
+.word-input.hint-missing {
+  border-color: var(--mark);
+  background: var(--mark-surface);
+}
+
 .practice-tool-button {
   display: inline-flex;
   align-items: center;

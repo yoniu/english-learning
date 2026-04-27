@@ -2,13 +2,12 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Bookmark,
   BookmarkCheck,
   Database,
   Eye,
-  EyeOff,
   Keyboard,
   Loader2,
   Volume2,
@@ -21,10 +20,6 @@ import {
   saveCurrentIndex,
   savePracticeItem,
 } from "@/lib/storage";
-import {
-  loadShowTextHint,
-  saveShowTextHint,
-} from "@/lib/local-settings";
 import { primeSpeechSynthesis, speakEnglishText } from "@/lib/speech";
 import { isWordCorrect, tokenizeText } from "@/lib/words";
 import type { PracticeItem, PracticeList } from "@/types/app";
@@ -40,6 +35,7 @@ export default function PracticeDetailPage() {
     Record<number, "correct" | "wrong">
   >({});
   const [showTextHint, setShowTextHint] = useState(false);
+  const hintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
@@ -49,12 +45,16 @@ export default function PracticeDetailPage() {
 
   useEffect(() => {
     primeSpeechSynthesis();
+
+    return () => {
+      if (hintTimerRef.current) {
+        clearTimeout(hintTimerRef.current);
+      }
+    };
   }, []);
 
   useEffect(() => {
     async function hydrate() {
-      setShowTextHint(loadShowTextHint());
-
       const [storedList, storedItems, storedIndex] = await Promise.all([
         loadPracticeList(listId),
         loadPracticeItems(listId),
@@ -83,6 +83,11 @@ export default function PracticeDetailPage() {
     setAnswers(tokens.map(() => ""));
     setWordStatuses({});
     setNotice("");
+    setShowTextHint(false);
+    if (hintTimerRef.current) {
+      clearTimeout(hintTimerRef.current);
+      hintTimerRef.current = null;
+    }
   }, [currentItem?.id]);
 
   useEffect(() => {
@@ -105,7 +110,7 @@ export default function PracticeDetailPage() {
 
       if (event.ctrlKey && event.key.toLowerCase() === "d") {
         event.preventDefault();
-        toggleTextHint();
+        revealTextHint();
         return;
       }
 
@@ -215,10 +220,17 @@ export default function PracticeDetailPage() {
     setNotice(updatedItem.marked ? "已标记当前内容。" : "已取消标记。");
   }
 
-  function toggleTextHint() {
-    const nextValue = !showTextHint;
-    setShowTextHint(nextValue);
-    saveShowTextHint(nextValue);
+  function revealTextHint() {
+    setShowTextHint(true);
+
+    if (hintTimerRef.current) {
+      clearTimeout(hintTimerRef.current);
+    }
+
+    hintTimerRef.current = setTimeout(() => {
+      setShowTextHint(false);
+      hintTimerRef.current = null;
+    }, 5000);
   }
 
   function goToItem(index: number) {
@@ -273,8 +285,24 @@ export default function PracticeDetailPage() {
             {currentItem.zhHint}
           </p>
           {showTextHint ? (
-            <p className="mt-2 text-lg font-bold text-[var(--accent-strong)]">
-              {currentItem.text}
+            <p className="mt-2 flex flex-wrap gap-x-1 gap-y-2 text-lg font-bold text-[var(--accent-strong)]">
+              {tokens.map((token, index) => {
+                const isMissing = !answers[index]?.trim();
+
+                return (
+                  <span
+                    className={
+                      isMissing
+                        ? "rounded bg-[var(--mark-surface)] px-1 text-[var(--accent-strong)] ring-1 ring-[var(--line)]"
+                        : "text-[var(--muted)]"
+                    }
+                    key={`${token.word}-hint-${index}`}
+                  >
+                    {token.word}
+                    {token.trailing}
+                  </span>
+                );
+              })}
             </p>
           ) : null}
         </div>
@@ -306,15 +334,11 @@ export default function PracticeDetailPage() {
           </button>
           <button
             className="practice-tool-button text-[var(--muted)]"
-            onClick={toggleTextHint}
-            title="显示或隐藏英文提示"
+            onClick={revealTextHint}
+            title="显示 5 秒英文提示"
             type="button"
           >
-            {showTextHint ? (
-              <EyeOff className="h-5 w-5" />
-            ) : (
-              <Eye className="h-5 w-5" />
-            )}
+            <Eye className="h-5 w-5" />
             <span>提示</span>
             <kbd>Ctrl+D</kbd>
           </button>
@@ -329,6 +353,8 @@ export default function PracticeDetailPage() {
                 aria-label={`word-${index + 1}`}
                 className={`word-input rounded-md px-3 py-3 text-lg font-black ${
                   wordStatuses[index] ?? ""
+                } ${
+                  showTextHint && !answers[index]?.trim() ? "hint-missing" : ""
                 }`}
                 onBlur={() => validateWord(index)}
                 onChange={(event) => {
