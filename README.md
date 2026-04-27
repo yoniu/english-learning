@@ -9,6 +9,7 @@ A pure frontend English spelling practice app built with Next.js, TypeScript, an
 - Store practice items, progress, mistakes, and marks in IndexedDB.
 - Practice one word per input with blur validation and Enter checks.
 - Use `Ctrl+S` for speech, `Ctrl+M` to mark, and `Ctrl+D` to show or hide the English text hint.
+- Use separate pages for generated practice lists, active practice, marked items, mistakes, and settings.
 
 ## Run
 
@@ -18,6 +19,15 @@ pnpm dev
 ```
 
 Open http://127.0.0.1:3000.
+
+## Pages
+
+- `/` Practice lists, with a modal for generating a new list.
+- `/practice/[listId]` Active spelling practice for a selected list.
+- `/practice` Opens the latest active list when available.
+- `/marked` Marked phrases and sentences.
+- `/mistakes` Mistake records.
+- `/settings` AI profile settings.
 
 ## Local Data
 

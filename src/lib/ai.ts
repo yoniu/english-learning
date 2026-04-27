@@ -1,4 +1,8 @@
-import type { AiProfile, GenerationOptions, PracticeItem } from "@/types/app";
+import type {
+  AiProfile,
+  GeneratedPracticeItem,
+  GenerationOptions,
+} from "@/types/app";
 
 type ChatCompletionResponse = {
   choices?: Array<{
@@ -39,7 +43,7 @@ function parseJsonContent(content: string): GeneratedPayload {
 export async function generatePracticeItems(
   profile: AiProfile,
   options: GenerationOptions,
-): Promise<PracticeItem[]> {
+): Promise<GeneratedPracticeItem[]> {
   const response = await fetch(buildChatCompletionsUrl(profile.baseUrl), {
     method: "POST",
     headers: {
@@ -99,12 +103,10 @@ export async function generatePracticeItems(
         item.zhHint.trim().length > 0,
     )
     .slice(0, options.count)
-    .map((item, index) => ({
-      id: `${Date.now()}-${index}`,
+    .map((item) => ({
       kind: item.kind as "phrase" | "sentence",
       text: item.text!.trim(),
       zhHint: item.zhHint!.trim(),
       topic: options.topic.trim(),
-      marked: false,
     }));
 }
