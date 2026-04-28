@@ -62,8 +62,10 @@ export default function SettingsPage() {
   const [themeColor, setThemeColor] = useState(defaultThemeColor);
   const [backgroundSettings, setBackgroundSettings] =
     useState<BackgroundSettings>(defaultBackgroundSettings);
-  const [notice, setNotice] = useState("");
-  const [error, setError] = useState("");
+  const [baseNotice, setBaseNotice] = useState("");
+  const [baseError, setBaseError] = useState("");
+  const [aiNotice, setAiNotice] = useState("");
+  const [aiError, setAiError] = useState("");
 
   const activeProfile =
     profiles.find((profile) => profile.id === activeProfileId) ?? profiles[0];
@@ -92,8 +94,8 @@ export default function SettingsPage() {
   }
 
   function saveProfile() {
-    setError("");
-    setNotice("");
+    setAiError("");
+    setAiNotice("");
 
     if (
       !profileDraft.name.trim() ||
@@ -101,7 +103,7 @@ export default function SettingsPage() {
       !profileDraft.apiKey.trim() ||
       !profileDraft.model.trim()
     ) {
-      setError("请完整填写 AI 配置。");
+      setAiError("请完整填写 AI 配置。");
       return;
     }
 
@@ -119,7 +121,7 @@ export default function SettingsPage() {
       );
       updateProfiles(nextProfiles);
       setEditingProfileId("");
-      setNotice("AI 配置已更新。");
+      setAiNotice("AI 配置已更新。");
     } else {
       const nextProfile: AiProfile = {
         id: createId(),
@@ -129,7 +131,7 @@ export default function SettingsPage() {
         model: profileDraft.model.trim(),
       };
       updateProfiles([...profiles, nextProfile], activeProfile?.id ?? nextProfile.id);
-      setNotice("AI 配置已保存。");
+      setAiNotice("AI 配置已保存。");
     }
 
     setProfileDraft(blankProfileDraft);
@@ -143,14 +145,15 @@ export default function SettingsPage() {
       apiKey: profile.apiKey,
       model: profile.model,
     });
-    setNotice("");
-    setError("");
+    setAiNotice("");
+    setAiError("");
   }
 
   function switchProfile(profileId: string) {
     setActiveProfileId(profileId);
     saveActiveProfileId(profileId);
-    setNotice("已切换当前 AI 配置。");
+    setAiNotice("已切换当前 AI 配置。");
+    setAiError("");
   }
 
   function updateThemeColor(nextColor: string) {
@@ -158,16 +161,16 @@ export default function SettingsPage() {
     setThemeColor(normalizedColor);
     saveThemeColor(normalizedColor);
     applyThemeColor(normalizedColor);
-    setNotice("主题色已更新。");
-    setError("");
+    setBaseNotice("主题色已更新。");
+    setBaseError("");
   }
 
   function updateBackgroundSettings(nextSettings: BackgroundSettings) {
     setBackgroundSettings(nextSettings);
     saveBackgroundSettings(nextSettings);
     applyBackgroundSettings(nextSettings);
-    setNotice("背景设置已更新。");
-    setError("");
+    setBaseNotice("背景设置已更新。");
+    setBaseError("");
   }
 
   function uploadBackgroundImage(file: File | undefined) {
@@ -176,7 +179,7 @@ export default function SettingsPage() {
     }
 
     if (!file.type.startsWith("image/")) {
-      setError("请选择图片文件。");
+      setBaseError("请选择图片文件。");
       return;
     }
 
@@ -189,7 +192,7 @@ export default function SettingsPage() {
         });
       }
     };
-    reader.onerror = () => setError("读取图片失败。");
+    reader.onerror = () => setBaseError("读取图片失败。");
     reader.readAsDataURL(file);
   }
 
@@ -360,6 +363,17 @@ export default function SettingsPage() {
             </button>
           </div>
         </div>
+
+        {baseError ? (
+          <div className="mt-4 rounded-md border border-[rgba(200,84,56,0.28)] bg-[rgba(200,84,56,0.1)] p-3 text-sm font-bold text-[var(--coral)]">
+            {baseError}
+          </div>
+        ) : null}
+        {baseNotice ? (
+          <div className="mt-4 rounded-md border border-[rgba(15,109,115,0.2)] bg-[rgba(15,109,115,0.1)] p-3 text-sm font-bold text-[var(--teal-dark)]">
+            {baseNotice}
+          </div>
+        ) : null}
       </div>
 
       <div className="panel rounded-lg p-6">
@@ -444,14 +458,14 @@ export default function SettingsPage() {
               {editingProfileId ? "更新配置" : "保存配置"}
             </button>
 
-            {error ? (
+            {aiError ? (
               <div className="rounded-md border border-[rgba(200,84,56,0.28)] bg-[rgba(200,84,56,0.1)] p-3 text-sm font-bold text-[var(--coral)]">
-                {error}
+                {aiError}
               </div>
             ) : null}
-            {notice ? (
+            {aiNotice ? (
               <div className="rounded-md border border-[rgba(15,109,115,0.2)] bg-[rgba(15,109,115,0.1)] p-3 text-sm font-bold text-[var(--teal-dark)]">
-                {notice}
+                {aiNotice}
               </div>
             ) : null}
           </div>
