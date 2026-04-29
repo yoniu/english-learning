@@ -10,6 +10,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { generateMistakeAnalyses } from "@/lib/ai";
 import { loadActiveProfileId, loadAiProfiles } from "@/lib/local-settings";
 import {
@@ -17,6 +18,7 @@ import {
   loadMistakes,
   loadPracticeLists,
   saveMistakeAnalyses,
+  startPracticeSession,
 } from "@/lib/storage";
 import type { AiProfile, MistakeRecord, PracticeList } from "@/types/app";
 
@@ -29,6 +31,7 @@ function hasAiAnalysis(mistake: MistakeRecord): boolean {
 }
 
 export default function MistakesPage() {
+  const router = useRouter();
   const [mistakes, setMistakes] = useState<MistakeRecord[]>([]);
   const [lists, setLists] = useState<PracticeList[]>([]);
   const [profiles, setProfiles] = useState<AiProfile[]>([]);
@@ -38,6 +41,7 @@ export default function MistakesPage() {
   const [deleting, setDeleting] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [confirmingDeleteIds, setConfirmingDeleteIds] = useState<string[]>([]);
+  const [startingListId, setStartingListId] = useState("");
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
 
@@ -177,6 +181,25 @@ export default function MistakesPage() {
     }
   }
 
+  async function handleStartPractice(listId: string | undefined) {
+    if (!listId) {
+      return;
+    }
+
+    setError("");
+    setStartingListId(listId);
+
+    try {
+      const session = await startPracticeSession(listId);
+      router.push(`/practice?sessionId=${encodeURIComponent(session.id)}`);
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error ? caughtError.message : "开始练习失败。",
+      );
+      setStartingListId("");
+    }
+  }
+
   return (
     <section className="page-stack">
       <div className="page-hero">
@@ -291,17 +314,31 @@ export default function MistakesPage() {
               </p>
 
               {mistake.listId ? (
-                <Link
+                <button
                   className="secondary-button mt-4"
-                  href={`/practice?listId=${encodeURIComponent(mistake.listId)}`}
+                  disabled={Boolean(startingListId)}
+                  onClick={() => void handleStartPractice(mistake.listId)}
+                  type="button"
                 >
-                  {getListTitle(mistake.listId)}
-                </Link>
+                  {startingListId === mistake.listId ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : null}
+                  开始该组练习
+                </button>
               ) : (
                 <p className="mt-4 text-sm font-medium text-[var(--muted)]">
                   {getListTitle(mistake.listId)}
                 </p>
               )}
+
+              {mistake.listId ? (
+                <Link
+                  className="mt-3 inline-flex text-sm text-[var(--accent)]"
+                  href="/"
+                >
+                  查看练习列表
+                </Link>
+              ) : null}
             </article>
           ))}
         </div>

@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   AlertCircle,
   BookmarkCheck,
+  ClipboardList,
   Keyboard,
   ListChecks,
   PanelLeftClose,
@@ -27,6 +28,7 @@ import {
 const navItems = [
   { href: "/", label: "练习列表", icon: ListChecks },
   { href: "/practice", label: "开始练习", icon: Keyboard },
+  { href: "/records", label: "练习记录", icon: ClipboardList },
   { href: "/marked", label: "标记内容", icon: BookmarkCheck },
   { href: "/mistakes", label: "错词本", icon: AlertCircle },
   { href: "/settings", label: "设置", icon: Settings },

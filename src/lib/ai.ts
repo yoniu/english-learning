@@ -3,6 +3,7 @@ import type {
   GeneratedPracticeItem,
   GenerationOptions,
   MistakeAnalysis,
+  PracticeEvaluation,
 } from "@/types/app";
 
 type ChatCompletionResponse = {
@@ -30,6 +31,13 @@ type MistakeAnalysisPayload = {
   }>;
 };
 
+type PracticeEvaluationPayload = {
+  summary?: string;
+  strengths?: string[];
+  improvements?: string[];
+  encouragement?: string;
+};
+
 function buildChatCompletionsUrl(baseUrl: string): string {
   const cleanBaseUrl = baseUrl.trim().replace(/\/+$/, "");
 
@@ -44,16 +52,10 @@ function buildChatCompletionsUrl(baseUrl: string): string {
   return `${cleanBaseUrl}/v1/chat/completions`;
 }
 
-function parseJsonContent(content: string): GeneratedPayload {
+function parseJson<T>(content: string): T {
   const fencedJson = content.match(/```(?:json)?\s*([\s\S]*?)```/i);
   const jsonText = fencedJson ? fencedJson[1] : content;
-  return JSON.parse(jsonText.trim()) as GeneratedPayload;
-}
-
-function parseMistakeAnalysisContent(content: string): MistakeAnalysisPayload {
-  const fencedJson = content.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  const jsonText = fencedJson ? fencedJson[1] : content;
-  return JSON.parse(jsonText.trim()) as MistakeAnalysisPayload;
+  return JSON.parse(jsonText.trim()) as T;
 }
 
 export async function generatePracticeItems(
@@ -102,7 +104,7 @@ export async function generatePracticeItems(
     throw new Error("AI response did not include message content.");
   }
 
-  const payload = parseJsonContent(content);
+  const payload = parseJson<GeneratedPayload>(content);
   const generatedItems = payload.items;
 
   if (!Array.isArray(generatedItems) || generatedItems.length === 0) {
@@ -179,7 +181,7 @@ export async function generateMistakeAnalyses(
     throw new Error("AI response did not include message content.");
   }
 
-  const payload = parseMistakeAnalysisContent(content);
+  const payload = parseJson<MistakeAnalysisPayload>(content);
   const analyses: Record<string, MistakeAnalysis> = {};
 
   for (const item of payload.items ?? []) {
@@ -198,4 +200,102 @@ export async function generateMistakeAnalyses(
   }
 
   return analyses;
+}
+
+export async function generatePracticeEvaluation(
+  profile: AiProfile,
+  params: {
+    listTitle: string;
+    durationSeconds: number;
+    completedItemCount: number;
+    hintCount: number;
+    hintedItems: Array<{
+      text: string;
+      zhHint: string;
+      count: number;
+    }>;
+    wrongWordCount: number;
+    wrongSentenceCount: number;
+    wrongItems: Array<{
+      text: string;
+      zhHint: string;
+    }>;
+  },
+): Promise<PracticeEvaluation> {
+  const response = await fetch(buildChatCompletionsUrl(profile.baseUrl), {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${profile.apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: profile.model,
+      temperature: 0.4,
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are an English learning coach. Return only valid JSON. Do not include markdown, comments, or extra text.",
+        },
+        {
+          role: "user",
+          content: [
+            "Create a concise practice review for a Chinese learner.",
+            `Practice list: ${params.listTitle}`,
+            `Duration seconds: ${params.durationSeconds}`,
+            `Completed items: ${params.completedItemCount}`,
+            `Hint count: ${params.hintCount}`,
+            `Hinted items: ${
+              params.hintedItems.length > 0
+                ? params.hintedItems
+                    .map(
+                      (item) => `${item.text} (${item.zhHint}) x${item.count}`,
+                    )
+                    .join("; ")
+                : "none"
+            }`,
+            `Wrong word count: ${params.wrongWordCount}`,
+            `Wrong sentence count: ${params.wrongSentenceCount}`,
+            `Wrong items: ${
+              params.wrongItems.length > 0
+                ? params.wrongItems
+                    .map((item) => `${item.text} (${item.zhHint})`)
+                    .join("; ")
+                : "none"
+            }`,
+            'Return exactly this JSON shape: {"summary":"one short Simplified Chinese summary","strengths":["two short Simplified Chinese bullets"],"improvements":["two short Simplified Chinese bullets"],"encouragement":"one short encouraging Simplified Chinese sentence"}',
+            "Be specific to the stats, hinted items, and wrong items. Keep each item concise and natural.",
+          ].join("\n"),
+        },
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(body || `AI request failed with status ${response.status}`);
+  }
+
+  const data = (await response.json()) as ChatCompletionResponse;
+  const content = data.choices?.[0]?.message?.content;
+
+  if (!content) {
+    throw new Error("AI response did not include message content.");
+  }
+
+  const payload = parseJson<PracticeEvaluationPayload>(content);
+
+  return {
+    summary: payload.summary?.trim() || "已完成本次练习，继续保持。",
+    strengths:
+      payload.strengths?.filter((item) => item.trim()).slice(0, 3) ?? [
+        "完成了整组练习。",
+      ],
+    improvements:
+      payload.improvements?.filter((item) => item.trim()).slice(0, 3) ?? [
+        "继续关注易错拼写。",
+      ],
+    encouragement:
+      payload.encouragement?.trim() || "继续下一轮练习，你会越来越稳。",
+  };
 }

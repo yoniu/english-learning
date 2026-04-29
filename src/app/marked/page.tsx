@@ -6,7 +6,7 @@ import { BookmarkCheck, Loader2 } from "lucide-react";
 import {
   loadPracticeItems,
   loadPracticeLists,
-  saveCurrentIndex,
+  startPracticeSession,
 } from "@/lib/storage";
 import type { PracticeItem, PracticeList } from "@/types/app";
 
@@ -15,6 +15,7 @@ export default function MarkedPage() {
   const [items, setItems] = useState<PracticeItem[]>([]);
   const [lists, setLists] = useState<PracticeList[]>([]);
   const [loading, setLoading] = useState(true);
+  const [startingListId, setStartingListId] = useState("");
   const [error, setError] = useState("");
 
   const markedItems = items.filter((item) => item.marked);
@@ -34,14 +35,17 @@ export default function MarkedPage() {
   }, []);
 
   async function startPractice(item: PracticeItem) {
-    const listItems = items.filter(
-      (candidate) => candidate.listId === item.listId,
-    );
-    const index = listItems.findIndex((candidate) => candidate.id === item.id);
+    setError("");
+    setStartingListId(item.listId);
 
-    if (index >= 0) {
-      await saveCurrentIndex(item.listId, index);
-      router.push(`/practice?listId=${encodeURIComponent(item.listId)}`);
+    try {
+      const session = await startPracticeSession(item.listId);
+      router.push(`/practice?sessionId=${encodeURIComponent(session.id)}`);
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error ? caughtError.message : "开始练习失败。",
+      );
+      setStartingListId("");
     }
   }
 
@@ -69,27 +73,38 @@ export default function MarkedPage() {
         </div>
       ) : markedItems.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {markedItems.map((item) => (
-            <button
-              className="list-card text-left"
-              key={item.id}
-              onClick={() => void startPractice(item)}
-              type="button"
-            >
-              <div className="flex items-center gap-2">
-                <span className="kind-tag">
-                  {item.kind === "sentence" ? "短句" : "短语"}
-                </span>
-                <span className="text-xs font-medium text-[var(--muted)]">
-                  {getListTitle(item.listId)}
-                </span>
-              </div>
-              <p className="mt-4 text-lg font-semibold leading-8">{item.text}</p>
-              <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-                {item.zhHint}
-              </p>
-            </button>
-          ))}
+          {markedItems.map((item) => {
+            const starting = startingListId === item.listId;
+
+            return (
+              <button
+                className="list-card text-left"
+                disabled={Boolean(startingListId)}
+                key={item.id}
+                onClick={() => void startPractice(item)}
+                type="button"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="kind-tag">
+                    {item.kind === "sentence" ? "短句" : "短语"}
+                  </span>
+                  <span className="text-xs font-medium text-[var(--muted)]">
+                    {getListTitle(item.listId)}
+                  </span>
+                </div>
+                <p className="mt-4 text-lg font-semibold leading-8">{item.text}</p>
+                <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+                  {item.zhHint}
+                </p>
+                {starting ? (
+                  <span className="mt-4 inline-flex items-center gap-2 text-sm text-[var(--accent)]">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    正在开始新练习
+                  </span>
+                ) : null}
+              </button>
+            );
+          })}
         </div>
       ) : (
         <div className="empty-state">

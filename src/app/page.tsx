@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   BookmarkCheck,
   CalendarDays,
@@ -12,7 +12,7 @@ import {
   Plus,
 } from "lucide-react";
 import { GeneratePracticeModal } from "@/components/generate-practice-modal";
-import { loadPracticeLists, saveActivePracticeListId } from "@/lib/storage";
+import { loadPracticeLists, startPracticeSession } from "@/lib/storage";
 import type { PracticeList } from "@/types/app";
 
 const levelLabels: Record<string, string> = {
@@ -23,8 +23,10 @@ const levelLabels: Record<string, string> = {
 };
 
 export default function PracticeListPage() {
+  const router = useRouter();
   const [lists, setLists] = useState<PracticeList[]>([]);
   const [loading, setLoading] = useState(true);
+  const [startingListId, setStartingListId] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [error, setError] = useState("");
 
@@ -45,13 +47,28 @@ export default function PracticeListPage() {
     setLists((current) => [list, ...current]);
   }
 
+  async function handleStartPractice(listId: string) {
+    setError("");
+    setStartingListId(listId);
+
+    try {
+      const session = await startPracticeSession(listId);
+      router.push(`/practice?sessionId=${encodeURIComponent(session.id)}`);
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error ? caughtError.message : "开始练习失败。",
+      );
+      setStartingListId("");
+    }
+  }
+
   return (
     <section className="page-stack">
       <div className="page-hero">
         <div>
           <h1 className="page-hero-title">练习列表</h1>
           <p className="page-hero-text">
-            每个练习列表都是一组由 AI 生成的短句或短语。先选一个主题，再进入拼写练习与错词复盘。
+            每次都从这里开始一轮新的练习。进入后系统会重新打乱顺序并开始计时。
           </p>
         </div>
         <button
@@ -73,40 +90,49 @@ export default function PracticeListPage() {
         </div>
       ) : lists.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {lists.map((list) => (
-            <article className="list-card" key={list.id}>
-              <div className="flex items-center justify-between gap-3">
-                <span className="subtle-tag">
-                  {levelLabels[list.level] ?? list.level}
-                </span>
-                <Layers className="h-5 w-5 text-[var(--accent)]" />
-              </div>
+          {lists.map((list) => {
+            const starting = startingListId === list.id;
 
-              <h2 className="mt-4 text-[1.4rem] font-semibold leading-8">
-                {list.title}
-              </h2>
+            return (
+              <article className="list-card" key={list.id}>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="subtle-tag">
+                    {levelLabels[list.level] ?? list.level}
+                  </span>
+                  <Layers className="h-5 w-5 text-[var(--accent)]" />
+                </div>
 
-              <div className="meta-row mt-4">
-                <span className="meta-chip">
-                  <BookmarkCheck className="h-4 w-4" />
-                  {list.itemCount} 条内容
-                </span>
-                <span className="meta-chip">
-                  <CalendarDays className="h-4 w-4" />
-                  {new Date(list.createdAt).toLocaleDateString()}
-                </span>
-              </div>
+                <h2 className="mt-4 text-[1.4rem] font-semibold leading-8">
+                  {list.title}
+                </h2>
 
-              <Link
-                className="primary-button mt-6 w-full"
-                href={`/practice?listId=${encodeURIComponent(list.id)}`}
-                onClick={() => void saveActivePracticeListId(list.id)}
-              >
-                <Keyboard className="h-4 w-4" />
-                开始练习
-              </Link>
-            </article>
-          ))}
+                <div className="meta-row mt-4">
+                  <span className="meta-chip">
+                    <BookmarkCheck className="h-4 w-4" />
+                    {list.itemCount} 条内容
+                  </span>
+                  <span className="meta-chip">
+                    <CalendarDays className="h-4 w-4" />
+                    {new Date(list.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
+
+                <button
+                  className="primary-button mt-6 w-full"
+                  disabled={Boolean(startingListId)}
+                  onClick={() => void handleStartPractice(list.id)}
+                  type="button"
+                >
+                  {starting ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Keyboard className="h-4 w-4" />
+                  )}
+                  开始练习
+                </button>
+              </article>
+            );
+          })}
         </div>
       ) : (
         <div className="empty-state">

@@ -55,3 +55,43 @@ export type MistakeAnalysis = {
   definition: string;
   example: string;
 };
+
+export type PracticeSession = {
+  id: string;
+  listId: string;
+  startedAt: string;
+  shuffledItemIds: string[];
+};
+
+export type PracticeEvaluation = {
+  summary: string;
+  strengths: string[];
+  improvements: string[];
+  encouragement: string;
+};
+
+export type PracticeRecord = {
+  id: string;
+  sessionId: string;
+  listId: string;
+  listTitle: string;
+  startedAt: string;
+  completedAt: string;
+  durationMs: number;
+  hintCount: number;
+  hintedItems: Array<{
+    itemId: string;
+    text: string;
+    zhHint: string;
+    count: number;
+  }>;
+  wrongWordCount: number;
+  wrongSentenceCount: number;
+  wrongItems: Array<{
+    itemId: string;
+    text: string;
+    zhHint: string;
+  }>;
+  completedItemCount: number;
+  evaluation?: PracticeEvaluation;
+};
