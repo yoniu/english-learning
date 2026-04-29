@@ -412,19 +412,29 @@ export async function loadActivePracticeSessionId(): Promise<string> {
 }
 
 export async function stopPracticeSession(sessionId: string): Promise<void> {
-  const store = await getStore("meta", "readwrite");
   const activeSessionId = await loadActivePracticeSessionId();
+  const db = await openDatabase();
 
-  await requestToPromise(store.delete(sessionKey(sessionId)));
+  try {
+    const tx = db.transaction("meta", "readwrite");
+    const store = tx.objectStore("meta");
 
-  if (activeSessionId === sessionId) {
-    await requestToPromise(store.delete(ACTIVE_SESSION_KEY));
+    store.delete(sessionKey(sessionId));
+
+    if (activeSessionId === sessionId) {
+      store.delete(ACTIVE_SESSION_KEY);
+    }
+
+    await transactionToPromise(tx);
+  } finally {
+    db.close();
   }
 }
 
 export async function savePracticeRecord(
   record: PracticeRecord,
 ): Promise<PracticeRecord> {
+  const activeSessionId = await loadActivePracticeSessionId();
   const db = await openDatabase();
 
   try {
@@ -435,11 +445,7 @@ export async function savePracticeRecord(
     recordsStore.put(record);
     metaStore.delete(sessionKey(record.sessionId));
 
-    const activeSession = await requestToPromise(
-      metaStore.get(ACTIVE_SESSION_KEY),
-    ) as { key: string; value: string } | undefined;
-
-    if (activeSession?.value === record.sessionId) {
+    if (activeSessionId === record.sessionId) {
       metaStore.delete(ACTIVE_SESSION_KEY);
     }
 
