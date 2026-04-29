@@ -234,6 +234,19 @@ export default function PracticePage() {
     }, 5000);
   }
 
+  function showTextHintForFiveSeconds() {
+    setShowTextHint(true);
+
+    if (hintTimerRef.current) {
+      clearTimeout(hintTimerRef.current);
+    }
+
+    hintTimerRef.current = setTimeout(() => {
+      setShowTextHint(false);
+      hintTimerRef.current = null;
+    }, 5000);
+  }
+
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.isComposing || completedRecord) {
@@ -401,6 +414,7 @@ export default function PracticePage() {
         ...current,
         [currentItem.id]: buildAttemptText(answers),
       }));
+      showTextHintForFiveSeconds();
       showWrongCheckNotice("检查发现拼写错误，已记录错词并自动标记当前句子。");
       setNotice("还有拼写需要修正，错词已经记录到错词本，错句已自动标记。");
       return;
@@ -580,7 +594,6 @@ export default function PracticePage() {
       return;
     }
 
-    setShowTextHint(true);
     setHintedItemIds((current) =>
       current.includes(currentItem.id) ? current : [...current, currentItem.id],
     );
@@ -588,15 +601,7 @@ export default function PracticePage() {
       ...current,
       [currentItem.id]: (current[currentItem.id] ?? 0) + 1,
     }));
-
-    if (hintTimerRef.current) {
-      clearTimeout(hintTimerRef.current);
-    }
-
-    hintTimerRef.current = setTimeout(() => {
-      setShowTextHint(false);
-      hintTimerRef.current = null;
-    }, 5000);
+    showTextHintForFiveSeconds();
   }
 
   function goToItem(index: number) {
