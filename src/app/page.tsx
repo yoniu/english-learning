@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   BookmarkCheck,
@@ -11,9 +11,14 @@ import {
   Loader2,
   Plus,
 } from "lucide-react";
+
 import { GeneratePracticeModal } from "@/components/generate-practice-modal";
-import { loadPracticeLists, startPracticeSession } from "@/lib/storage";
-import type { PracticeList } from "@/types/app";
+import {
+  loadPracticeLists,
+  loadPracticeRecords,
+  startPracticeSession,
+} from "@/lib/storage";
+import type { PracticeList, PracticeRecord } from "@/types/app";
 
 const levelLabels: Record<string, string> = {
   beginner: "初级",
@@ -25,23 +30,37 @@ const levelLabels: Record<string, string> = {
 export default function PracticeListPage() {
   const router = useRouter();
   const [lists, setLists] = useState<PracticeList[]>([]);
+  const [records, setRecords] = useState<PracticeRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [startingListId, setStartingListId] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    loadPracticeLists()
-      .then((storedLists) => setLists(storedLists))
+    Promise.all([loadPracticeLists(), loadPracticeRecords()])
+      .then(([storedLists, storedRecords]) => {
+        setLists(storedLists);
+        setRecords(storedRecords);
+      })
       .catch((caughtError) =>
         setError(
           caughtError instanceof Error
             ? caughtError.message
-            : "读取练习列表失败。",
+            : "读取练习列表失败，请稍后再试。",
         ),
       )
       .finally(() => setLoading(false));
   }, []);
+
+  const practiceCountByListId = useMemo(() => {
+    const counts = new Map<string, number>();
+
+    for (const record of records) {
+      counts.set(record.listId, (counts.get(record.listId) ?? 0) + 1);
+    }
+
+    return counts;
+  }, [records]);
 
   function addGeneratedList(list: PracticeList) {
     setLists((current) => [list, ...current]);
@@ -92,6 +111,7 @@ export default function PracticeListPage() {
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {lists.map((list) => {
             const starting = startingListId === list.id;
+            const practiceCount = practiceCountByListId.get(list.id) ?? 0;
 
             return (
               <article className="list-card" key={list.id}>
@@ -110,6 +130,10 @@ export default function PracticeListPage() {
                   <span className="meta-chip">
                     <BookmarkCheck className="h-4 w-4" />
                     {list.itemCount} 条内容
+                  </span>
+                  <span className="meta-chip">
+                    <Keyboard className="h-4 w-4" />
+                    练习 {practiceCount} 次
                   </span>
                   <span className="meta-chip">
                     <CalendarDays className="h-4 w-4" />
