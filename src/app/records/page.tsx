@@ -1,168 +1,585 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { ClipboardList, Clock3, Loader2, TriangleAlert } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  ClipboardList,
+  Clock3,
+  Loader2,
+  Search,
+  Sparkles,
+  TriangleAlert,
+  X,
+} from "lucide-react";
+
 import { loadPracticeRecords } from "@/lib/storage";
 import type { PracticeRecord } from "@/types/app";
+
+function formatDateTime(value: string): string {
+  return new Intl.DateTimeFormat("zh-CN", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
 
 function formatDuration(durationMs: number): string {
   const totalSeconds = Math.max(0, Math.round(durationMs / 1000));
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
+
+  if (minutes === 0) {
+    return `${seconds} 秒`;
+  }
+
   return `${minutes} 分 ${seconds} 秒`;
+}
+
+function normalizeRecord(record: PracticeRecord) {
+  return {
+    ...record,
+    hintCount: record.hintCount ?? 0,
+    hintedItems: record.hintedItems ?? [],
+    wrongItems: record.wrongItems ?? [],
+    wrongWordCount: record.wrongWordCount ?? 0,
+    wrongSentenceCount: record.wrongSentenceCount ?? 0,
+    completedItemCount: record.completedItemCount ?? 0,
+  };
 }
 
 export default function RecordsPage() {
   const [records, setRecords] = useState<PracticeRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string>("");
+  const [search, setSearch] = useState("");
+  const [selectedRecord, setSelectedRecord] = useState<PracticeRecord | null>(
+    null,
+  );
 
   useEffect(() => {
-    loadPracticeRecords()
-      .then((storedRecords) => setRecords(storedRecords))
-      .catch((caughtError) =>
+    let alive = true;
+
+    async function load() {
+      try {
+        setLoading(true);
+        const nextRecords = await loadPracticeRecords();
+
+        if (!alive) {
+          return;
+        }
+
+        setRecords(nextRecords);
+        setError("");
+      } catch (loadError) {
+        if (!alive) {
+          return;
+        }
+
         setError(
-          caughtError instanceof Error ? caughtError.message : "读取练习记录失败。",
-        ),
-      )
-      .finally(() => setLoading(false));
+          loadError instanceof Error
+            ? loadError.message
+            : "练习记录加载失败，请稍后再试。",
+        );
+      } finally {
+        if (alive) {
+          setLoading(false);
+        }
+      }
+    }
+
+    load();
+
+    return () => {
+      alive = false;
+    };
   }, []);
 
+  const filteredRecords = useMemo(() => {
+    const keyword = search.trim().toLowerCase();
+
+    if (!keyword) {
+      return records.map(normalizeRecord);
+    }
+
+    return records
+      .map(normalizeRecord)
+      .filter((record) => {
+        const summary = [
+          record.listTitle,
+          record.evaluation?.summary ?? "",
+          record.evaluation?.encouragement ?? "",
+          ...record.hintedItems.map((item) => `${item.text} ${item.zhHint}`),
+          ...record.wrongItems.map((item) => `${item.text} ${item.zhHint}`),
+        ]
+          .join(" ")
+          .toLowerCase();
+
+        return summary.includes(keyword);
+      });
+  }, [records, search]);
+
   return (
-    <section className="page-stack">
-      <div className="page-hero">
+    <div className="page-stack">
+      <section className="page-hero">
         <div>
           <h1 className="page-hero-title">练习记录</h1>
           <p className="page-hero-text">
-            查看每次完整练习的耗时、错词情况和 AI 评价，方便连续复盘自己的进步。
+            用表格快速回看每次练习的耗时、提示、错词和 AI 评价。支持搜索，点开就能看完整详情。
           </p>
         </div>
-      </div>
-
-      {error ? <div className="state-banner error">{error}</div> : null}
-
-      {loading ? (
-        <div className="loading-state">
-          <Loader2 className="h-5 w-5 animate-spin" />
-          <div>正在读取练习记录</div>
+        <div className="meta-row">
+          <span className="meta-chip">
+            <ClipboardList size={16} />
+            共 {records.length} 条记录
+          </span>
+          <span className="meta-chip">
+            <Clock3 size={16} />
+            最近完成 {records[0] ? formatDateTime(records[0].completedAt) : "--"}
+          </span>
         </div>
-      ) : records.length > 0 ? (
-        <div className="grid gap-4 xl:grid-cols-2">
-          {records.map((record) => (
-          <article className="list-card" key={record.id}>
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h2 className="text-xl font-semibold">{record.listTitle}</h2>
-                  <p className="mt-1 text-sm text-[var(--muted)]">
-                    完成时间：{new Date(record.completedAt).toLocaleString()}
-                  </p>
-                </div>
-                <span className="subtle-tag">完成 {record.completedItemCount} 条</span>
-              </div>
+      </section>
 
-              <div className="mt-5 grid gap-3 sm:grid-cols-4">
-                <div className="rounded-xl border border-[var(--line)] bg-[var(--paper-strong)] p-4">
-                  <div className="flex items-center gap-2 text-sm text-[var(--muted)]">
-                    <Clock3 className="h-4 w-4" />
-                    练习耗时
-                  </div>
-                  <p className="mt-2 text-lg font-semibold">
-                    {formatDuration(record.durationMs)}
-                  </p>
-                </div>
-                <div className="rounded-xl border border-[var(--line)] bg-[var(--paper-strong)] p-4">
-                  <div className="flex items-center gap-2 text-sm text-[var(--muted)]">
-                    <ClipboardList className="h-4 w-4" />
-                    提示次数
-                  </div>
-                  <p className="mt-2 text-lg font-semibold">
-                    {record.hintCount}
-                  </p>
-                </div>
-                <div className="rounded-xl border border-[var(--line)] bg-[var(--paper-strong)] p-4">
-                  <div className="flex items-center gap-2 text-sm text-[var(--muted)]">
-                    <TriangleAlert className="h-4 w-4" />
-                    错词数量
-                  </div>
-                  <p className="mt-2 text-lg font-semibold">
-                    {record.wrongWordCount}
-                  </p>
-                </div>
-                <div className="rounded-xl border border-[var(--line)] bg-[var(--paper-strong)] p-4">
-                  <div className="flex items-center gap-2 text-sm text-[var(--muted)]">
-                    <ClipboardList className="h-4 w-4" />
-                    错句数量
-                  </div>
-                  <p className="mt-2 text-lg font-semibold">
-                    {record.wrongSentenceCount}
-                  </p>
-                </div>
-              </div>
+      <section className="section-card">
+        <div className="section-header">
+          <div>
+            <h2 className="section-title">记录列表</h2>
+            <p className="section-subtitle">
+              可按练习名称、AI 摘要、提示句子或错句内容搜索。
+            </p>
+          </div>
+        </div>
 
-              <div className="mt-5 rounded-xl border border-[var(--line)] bg-[var(--paper-strong)] p-4">
-                <h3 className="text-base font-semibold">AI 评价</h3>
-                <p className="mt-3 text-sm leading-6">{record.evaluation?.summary}</p>
+        <div className="toolbar-strip" style={{ marginTop: "20px" }}>
+          <label
+            className="form-field"
+            style={{ minWidth: "min(100%, 360px)", flex: "1 1 320px" }}
+          >
+            <span>搜索记录</span>
+            <div style={{ position: "relative" }}>
+              <Search
+                size={16}
+                style={{
+                  position: "absolute",
+                  left: "12px",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  color: "var(--muted-soft)",
+                  pointerEvents: "none",
+                }}
+              />
+              <input
+                className="field"
+                style={{ padding: "0 14px 0 38px" }}
+                type="search"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="搜索练习名称、AI 评价、提示内容或错句"
+              />
+            </div>
+          </label>
+          <span className="meta-chip">结果 {filteredRecords.length} 条</span>
+        </div>
 
-                {record.hintedItems.length > 0 ? (
-                  <div className="mt-4">
-                    <p className="text-sm font-semibold text-[var(--muted)]">提示过的内容</p>
-                    <ul className="mt-2 space-y-2 text-sm leading-6 text-[var(--ink)]">
-                      {record.hintedItems.map((item) => (
-                        <li key={`${record.id}-hinted-${item.itemId}`}>
-                          - {item.text} / {item.zhHint}（{item.count} 次）
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : null}
+        {loading ? (
+          <div className="loading-state" style={{ marginTop: "20px" }}>
+            <Loader2 className="animate-spin" size={28} />
+            <h2>正在加载练习记录</h2>
+            <p>稍等一下，我们把最近的练习结果整理出来。</p>
+          </div>
+        ) : error ? (
+          <div className="state-banner error" style={{ marginTop: "20px" }}>
+            {error}
+          </div>
+        ) : filteredRecords.length === 0 ? (
+          <div className="empty-state" style={{ marginTop: "20px" }}>
+            <ClipboardList size={28} />
+            <h2>{records.length === 0 ? "还没有练习记录" : "没有匹配的记录"}</h2>
+            <p>
+              {records.length === 0
+                ? "完成一整组练习后，这里会自动保存练习结果和 AI 评价。"
+                : "换个关键词试试，或者清空搜索条件。"}
+            </p>
+          </div>
+        ) : (
+          <div
+            style={{
+              marginTop: "20px",
+              overflowX: "auto",
+              border: "1px solid var(--line)",
+              borderRadius: "12px",
+              background: "color-mix(in srgb, var(--surface) 88%, var(--paper) 12%)",
+            }}
+          >
+            <table
+              style={{
+                width: "100%",
+                minWidth: "980px",
+                borderCollapse: "collapse",
+              }}
+            >
+              <thead>
+                <tr
+                  style={{
+                    background:
+                      "color-mix(in srgb, var(--mark-surface) 32%, transparent)",
+                    color: "var(--muted)",
+                    fontSize: "0.8125rem",
+                    textAlign: "left",
+                  }}
+                >
+                  {[
+                    "练习列表",
+                    "完成时间",
+                    "耗时",
+                    "提示",
+                    "错词",
+                    "错句",
+                    "AI 摘要",
+                    "操作",
+                  ].map((label) => (
+                    <th
+                      key={label}
+                      style={{
+                        padding: "14px 16px",
+                        borderBottom: "1px solid var(--line)",
+                        fontWeight: 700,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {label}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filteredRecords.map((record) => (
+                  <tr
+                    key={record.id}
+                    style={{
+                      borderBottom: "1px solid var(--line)",
+                    }}
+                  >
+                    <td style={{ padding: "16px", verticalAlign: "top" }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "6px",
+                        }}
+                      >
+                        <strong style={{ fontSize: "0.95rem" }}>
+                          {record.listTitle}
+                        </strong>
+                        <span style={{ color: "var(--muted)", fontSize: "0.8125rem" }}>
+                          完成 {record.completedItemCount} 句
+                        </span>
+                      </div>
+                    </td>
+                    <td
+                      style={{
+                        padding: "16px",
+                        color: "var(--muted)",
+                        fontSize: "0.875rem",
+                        whiteSpace: "nowrap",
+                        verticalAlign: "top",
+                      }}
+                    >
+                      {formatDateTime(record.completedAt)}
+                    </td>
+                    <td
+                      style={{
+                        padding: "16px",
+                        whiteSpace: "nowrap",
+                        verticalAlign: "top",
+                      }}
+                    >
+                      {formatDuration(record.durationMs)}
+                    </td>
+                    <td style={{ padding: "16px", verticalAlign: "top" }}>
+                      {record.hintCount}
+                    </td>
+                    <td style={{ padding: "16px", verticalAlign: "top" }}>
+                      {record.wrongWordCount}
+                    </td>
+                    <td style={{ padding: "16px", verticalAlign: "top" }}>
+                      {record.wrongSentenceCount}
+                    </td>
+                    <td style={{ padding: "16px", verticalAlign: "top" }}>
+                      <div
+                        style={{
+                          maxWidth: "320px",
+                          color: "var(--muted)",
+                          fontSize: "0.875rem",
+                          lineHeight: 1.7,
+                        }}
+                      >
+                        {record.evaluation?.summary ?? "这次练习还没有生成 AI 评价。"}
+                      </div>
+                    </td>
+                    <td style={{ padding: "16px", verticalAlign: "top" }}>
+                      <button
+                        className="secondary-button"
+                        type="button"
+                        onClick={() => setSelectedRecord(record)}
+                      >
+                        查看详情
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
 
-                {record.wrongItems.length > 0 ? (
-                  <div className="mt-4">
-                    <p className="text-sm font-semibold text-[var(--muted)]">检查出错的句子</p>
-                    <ul className="mt-2 space-y-2 text-sm leading-6 text-[var(--ink)]">
-                      {record.wrongItems.map((item) => (
-                        <li key={`${record.id}-wrong-${item.itemId}`}>
-                          - {item.text} / {item.zhHint}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : null}
-
-                <div className="mt-4 grid gap-4 lg:grid-cols-2">
-                  <div>
-                    <p className="text-sm font-semibold text-[var(--muted)]">做得不错</p>
-                    <ul className="mt-2 space-y-2 text-sm leading-6 text-[var(--ink)]">
-                      {(record.evaluation?.strengths ?? []).map((item, index) => (
-                        <li key={`${record.id}-strength-${index}`}>- {item}</li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div>
-                    <p className="text-sm font-semibold text-[var(--muted)]">继续提升</p>
-                    <ul className="mt-2 space-y-2 text-sm leading-6 text-[var(--ink)]">
-                      {(record.evaluation?.improvements ?? []).map((item, index) => (
-                        <li key={`${record.id}-improvement-${index}`}>- {item}</li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-
-                <p className="mt-4 text-sm font-medium text-[var(--accent)]">
-                  {record.evaluation?.encouragement}
+      {selectedRecord ? (
+        <div
+          className="modal-backdrop"
+          role="presentation"
+          onClick={() => setSelectedRecord(null)}
+        >
+          <div
+            className="modal-surface"
+            style={{ maxWidth: "920px" }}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="record-detail-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div
+              className="section-header"
+              style={{ alignItems: "center", marginBottom: "20px" }}
+            >
+              <div>
+                <h2 id="record-detail-title" className="section-title">
+                  {selectedRecord.listTitle}
+                </h2>
+                <p className="section-subtitle">
+                  完成时间 {formatDateTime(selectedRecord.completedAt)}
                 </p>
               </div>
-            </article>
-          ))}
+              <button
+                className="icon-button"
+                type="button"
+                aria-label="关闭详情"
+                onClick={() => setSelectedRecord(null)}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+                gap: "12px",
+              }}
+            >
+              {[
+                { label: "练习耗时", value: formatDuration(selectedRecord.durationMs) },
+                { label: "提示次数", value: `${selectedRecord.hintCount}` },
+                { label: "错词数量", value: `${selectedRecord.wrongWordCount}` },
+                { label: "错句数量", value: `${selectedRecord.wrongSentenceCount}` },
+              ].map((item) => (
+                <div
+                  key={item.label}
+                  style={{
+                    border: "1px solid var(--line)",
+                    borderRadius: "10px",
+                    background:
+                      "color-mix(in srgb, var(--surface) 84%, var(--paper) 16%)",
+                    padding: "14px 16px",
+                  }}
+                >
+                  <div
+                    style={{
+                      color: "var(--muted-soft)",
+                      fontSize: "0.75rem",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {item.label}
+                  </div>
+                  <div
+                    style={{
+                      marginTop: "8px",
+                      fontSize: "1.1rem",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {item.value}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div
+              className="section-card"
+              style={{ marginTop: "20px", padding: "18px 20px" }}
+            >
+              <div className="meta-row" style={{ marginBottom: "10px" }}>
+                <span className="meta-chip">
+                  <Sparkles size={16} />
+                  AI 练习评价
+                </span>
+              </div>
+              <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.8 }}>
+                {selectedRecord.evaluation?.summary ?? "这次练习还没有生成 AI 评价。"}
+              </p>
+
+              {selectedRecord.evaluation?.strengths?.length ? (
+                <div style={{ marginTop: "16px" }}>
+                  <strong>表现亮点</strong>
+                  <ul style={{ margin: "10px 0 0", paddingLeft: "20px", lineHeight: 1.8 }}>
+                    {selectedRecord.evaluation.strengths.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+
+              {selectedRecord.evaluation?.improvements?.length ? (
+                <div style={{ marginTop: "16px" }}>
+                  <strong>下一步建议</strong>
+                  <ul style={{ margin: "10px 0 0", paddingLeft: "20px", lineHeight: 1.8 }}>
+                    {selectedRecord.evaluation.improvements.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+
+              {selectedRecord.evaluation?.encouragement ? (
+                <div className="state-banner info" style={{ marginTop: "16px" }}>
+                  {selectedRecord.evaluation.encouragement}
+                </div>
+              ) : null}
+            </div>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+                gap: "20px",
+                marginTop: "20px",
+              }}
+            >
+              <section
+                style={{
+                  border: "1px solid var(--line)",
+                  borderRadius: "12px",
+                  padding: "18px",
+                  background:
+                    "color-mix(in srgb, var(--surface) 84%, var(--paper) 16%)",
+                }}
+              >
+                <div className="meta-row" style={{ marginBottom: "12px" }}>
+                  <span className="meta-chip">
+                    <Search size={16} />
+                    提示内容
+                  </span>
+                </div>
+
+                {selectedRecord.hintedItems.length === 0 ? (
+                  <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.8 }}>
+                    这次练习没有使用提示。
+                  </p>
+                ) : (
+                  <div style={{ display: "grid", gap: "12px" }}>
+                    {selectedRecord.hintedItems.map((item) => (
+                      <div
+                        key={item.itemId}
+                        style={{
+                          border: "1px solid var(--line)",
+                          borderRadius: "10px",
+                          padding: "12px 14px",
+                          background: "var(--paper-strong)",
+                        }}
+                      >
+                        <strong style={{ display: "block", lineHeight: 1.6 }}>
+                          {item.text}
+                        </strong>
+                        <p
+                          style={{
+                            margin: "8px 0 0",
+                            color: "var(--muted)",
+                            lineHeight: 1.7,
+                          }}
+                        >
+                          {item.zhHint}
+                        </p>
+                        <span
+                          style={{
+                            display: "inline-block",
+                            marginTop: "10px",
+                            color: "var(--accent)",
+                            fontSize: "0.8125rem",
+                            fontWeight: 600,
+                          }}
+                        >
+                          提示 {item.count} 次
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+
+              <section
+                style={{
+                  border: "1px solid var(--line)",
+                  borderRadius: "12px",
+                  padding: "18px",
+                  background:
+                    "color-mix(in srgb, var(--surface) 84%, var(--paper) 16%)",
+                }}
+              >
+                <div className="meta-row" style={{ marginBottom: "12px" }}>
+                  <span className="meta-chip">
+                    <TriangleAlert size={16} />
+                    错句记录
+                  </span>
+                </div>
+
+                {selectedRecord.wrongItems.length === 0 ? (
+                  <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.8 }}>
+                    这次练习没有出现检查错误的句子。
+                  </p>
+                ) : (
+                  <div style={{ display: "grid", gap: "12px" }}>
+                    {selectedRecord.wrongItems.map((item) => (
+                      <div
+                        key={item.itemId}
+                        style={{
+                          border: "1px solid var(--danger-line)",
+                          borderRadius: "10px",
+                          padding: "12px 14px",
+                          background: "var(--danger-surface)",
+                        }}
+                      >
+                        <strong style={{ display: "block", lineHeight: 1.6 }}>
+                          {item.text}
+                        </strong>
+                        <p
+                          style={{
+                            margin: "8px 0 0",
+                            color: "var(--muted)",
+                            lineHeight: 1.7,
+                          }}
+                        >
+                          {item.zhHint}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+            </div>
+          </div>
         </div>
-      ) : (
-        <div className="empty-state">
-          <ClipboardList className="h-12 w-12 text-[var(--accent)]" />
-          <h2>还没有练习记录</h2>
-          <p>完成一整组练习后，这里会自动生成练习记录和 AI 评价。</p>
-        </div>
-      )}
-    </section>
+      ) : null}
+    </div>
   );
 }
