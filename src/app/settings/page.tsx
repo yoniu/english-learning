@@ -1,7 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bot, Check, Pencil, Plus, RotateCcw, Settings } from "lucide-react";
+import {
+  Bot,
+  Check,
+  ChevronRight,
+  Info,
+  Pencil,
+  Plus,
+  RotateCcw,
+  Settings,
+} from "lucide-react";
+import Link from "next/link";
 import {
   applyBackgroundSettings,
   applyThemeColor,
@@ -547,6 +557,39 @@ export default function SettingsPage() {
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="section-card">
+          <div className="section-header">
+            <div>
+              <div className="flex items-center gap-2">
+                <Info className="h-5 w-5 text-[var(--accent)]" />
+                <h2 className="section-title">关于应用</h2>
+              </div>
+              <p className="section-subtitle">
+                查看项目描述、基础信息和作者信息。
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-6 rounded-[12px] border border-[var(--line)] bg-[color-mix(in_srgb,var(--surface)_78%,var(--paper)_22%)] p-5">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="space-y-2">
+                <h3 className="text-lg font-semibold text-[var(--ink)]">
+                  English Spelling AI
+                </h3>
+                <p className="max-w-2xl text-sm leading-7 text-[var(--muted)]">
+                  基于 AI 能力的英语学习工具，强调本地化、可导出数据和
+                  人工智能加持。
+                </p>
+              </div>
+
+              <Link className="primary-button shrink-0" href="/settings/about">
+                查看关于页
+                <ChevronRight className="h-4 w-4" />
+              </Link>
             </div>
           </div>
         </section>
