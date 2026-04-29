@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -96,10 +97,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <aside className="app-sidebar">
         <div className="sidebar-header">
-          <Link className="brand-link" href="/" title="AI English Spelling">
-            <span className="brand-mark">AI</span>
+          <Link className="brand-link" href="/" title="English Spelling AI">
+            <span className="brand-mark">
+              <Image
+                alt="English Spelling AI logo"
+                className="brand-logo-image"
+                height={46}
+                priority
+                src="/logo-transparent.png"
+                width={46}
+              />
+            </span>
             <span className="side-label">
-              <span className="brand-title">English Spelling</span>
+              <span className="brand-title">English Spelling AI</span>
               <span className="brand-subtitle">
                 AI 生成练习，逐词拼写，持续复盘
               </span>
