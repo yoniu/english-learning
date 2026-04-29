@@ -174,6 +174,7 @@ export async function loadPracticeList(
 }
 
 export async function createPracticeList(params: {
+  title?: string;
   topic: string;
   level: string;
   items: GeneratedPracticeItem[];
@@ -181,10 +182,11 @@ export async function createPracticeList(params: {
   const db = await openDatabase();
   const now = new Date().toISOString();
   const listId = createId();
+  const trimmedTopic = params.topic.trim();
   const list: PracticeList = {
     id: listId,
-    title: params.topic.trim(),
-    topic: params.topic.trim(),
+    title: params.title?.trim() || trimmedTopic,
+    topic: trimmedTopic,
     level: params.level,
     itemCount: params.items.length,
     createdAt: now,

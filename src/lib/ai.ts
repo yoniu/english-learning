@@ -62,6 +62,10 @@ export async function generatePracticeItems(
   profile: AiProfile,
   options: GenerationOptions,
 ): Promise<GeneratedPracticeItem[]> {
+  const uniqueFocusWords = Array.from(
+    new Set(options.focusWords?.map((word) => word.trim()).filter(Boolean) ?? []),
+  );
+
   const response = await fetch(buildChatCompletionsUrl(profile.baseUrl), {
     method: "POST",
     headers: {
@@ -84,9 +88,17 @@ export async function generatePracticeItems(
             `Level: ${options.level}`,
             `Count: ${options.count}`,
             "Generate a mixed list of short English phrases and short English sentences for spelling practice.",
+            uniqueFocusWords.length > 0
+              ? `Target words: ${uniqueFocusWords.join(", ")}`
+              : "",
+            uniqueFocusWords.length > 0
+              ? "Every item must include at least one target word. Cover all target words where possible and focus on their common usage."
+              : "",
             'Return exactly this JSON shape: {"items":[{"kind":"phrase"|"sentence","text":"English text","zhHint":"Chinese meaning"}]}',
             "Use natural English, keep every item under 14 words, and make zhHint concise Simplified Chinese.",
-          ].join("\n"),
+          ]
+            .filter(Boolean)
+            .join("\n"),
         },
       ],
     }),

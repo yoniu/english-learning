@@ -6,11 +6,13 @@ import {
   AlertCircle,
   CheckSquare,
   Loader2,
+  Plus,
   Sparkles,
   Trash2,
   X,
 } from "lucide-react";
 
+import { GeneratePracticeModal } from "@/components/generate-practice-modal";
 import { generateMistakeAnalyses } from "@/lib/ai";
 import { loadActiveProfileId, loadAiProfiles } from "@/lib/local-settings";
 import {
@@ -43,6 +45,7 @@ export default function MistakesPage() {
   const [confirmingDeleteIds, setConfirmingDeleteIds] = useState<string[]>([]);
   const [pendingPracticeListId, setPendingPracticeListId] = useState("");
   const [startingListId, setStartingListId] = useState("");
+  const [generateModalOpen, setGenerateModalOpen] = useState(false);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
 
@@ -61,6 +64,9 @@ export default function MistakesPage() {
   );
   const allSelected =
     sortedMistakes.length > 0 && selectedIds.length === sortedMistakes.length;
+  const selectedMistakeWords = sortedMistakes
+    .filter((mistake) => selectedIds.includes(mistake.id))
+    .map((mistake) => mistake.expected);
 
   useEffect(() => {
     Promise.all([loadMistakes(), loadPracticeLists()])
@@ -144,12 +150,12 @@ export default function MistakesPage() {
       const nextMistakes = await saveMistakeAnalyses(updates);
       setMistakes(nextMistakes);
       setNotice(
-        `已生成 ${updates.length} 条 AI 解析，已有解析的 ${sortedMistakes.length - targets.length} 条记录已跳过。`,
+        `已生成 ${updates.length} 条 AI 解析，已有解析的 ${
+          sortedMistakes.length - targets.length
+        } 条记录已跳过。`,
       );
     } catch (caughtError) {
-      setError(
-        caughtError instanceof Error ? caughtError.message : "AI 解析失败。",
-      );
+      setError(caughtError instanceof Error ? caughtError.message : "AI 解析失败。");
     } finally {
       setAnalyzing(false);
     }
@@ -175,9 +181,7 @@ export default function MistakesPage() {
       setNotice(`已删除 ${confirmingDeleteIds.length} 条错词记录。`);
       setConfirmingDeleteIds([]);
     } catch (caughtError) {
-      setError(
-        caughtError instanceof Error ? caughtError.message : "删除错词失败。",
-      );
+      setError(caughtError instanceof Error ? caughtError.message : "删除错词失败。");
     } finally {
       setDeleting(false);
     }
@@ -203,9 +207,19 @@ export default function MistakesPage() {
     }
   }
 
+  function handleGeneratedPracticeList(list: PracticeList) {
+    setLists((current) => [list, ...current]);
+    setNotice(`已根据选中的 ${selectedMistakeWords.length} 个错词生成练习列表。`);
+  }
+
   const pendingPracticeTitle = pendingPracticeListId
     ? getListTitle(pendingPracticeListId)
     : "";
+  const generatedTopic =
+    selectedMistakeWords.length > 0
+      ? `mistakes review: ${selectedMistakeWords.join(", ")}`
+      : "mistakes review";
+  const generatedListTitle = `错词复习 ${new Date().toLocaleDateString()}`;
 
   return (
     <section className="page-stack">
@@ -213,7 +227,7 @@ export default function MistakesPage() {
         <div>
           <h1 className="page-hero-title">错词本</h1>
           <p className="page-hero-text">
-            系统会自动记录拼写错误，支持批量生成 AI 解析，方便回顾发音、释义和例句。
+            系统会自动记录拼写错误，支持批量生成 AI 解析，也可以根据选中的错词直接生成新的练习列表。
           </p>
         </div>
         <button
@@ -238,6 +252,15 @@ export default function MistakesPage() {
             {sortedMistakes.length - pendingAnalysisCount} 条。
           </span>
           <div className="flex flex-wrap gap-2">
+            <button
+              className="secondary-button"
+              disabled={selectedIds.length === 0}
+              onClick={() => setGenerateModalOpen(true)}
+              type="button"
+            >
+              <Plus className="h-4 w-4" />
+              生成练习列表
+            </button>
             <button className="secondary-button" onClick={toggleSelectAll} type="button">
               <CheckSquare className="h-4 w-4" />
               {allSelected ? "取消全选" : "全选"}
@@ -366,8 +389,8 @@ export default function MistakesPage() {
               <div>
                 <h2 className="section-title">删除错词</h2>
                 <p className="section-subtitle">
-                  确认删除 {confirmingDeleteIds.length} 条错词吗？删除后它们的次数和
-                  AI 解析都会被移除。
+                  确认删除 {confirmingDeleteIds.length} 条错词吗？删除后它们的次数和 AI
+                  解析都会被移除。
                 </p>
               </div>
               <button
@@ -417,8 +440,7 @@ export default function MistakesPage() {
               <div>
                 <h2 className="section-title">开始这组练习</h2>
                 <p className="section-subtitle">
-                  每次进入都会重新打乱顺序并开始计时。要现在开始
-                  “{pendingPracticeTitle}” 吗？
+                  每次进入都会重新打乱顺序并开始计时。要现在开始“{pendingPracticeTitle}”吗？
                 </p>
               </div>
               <button
@@ -459,6 +481,15 @@ export default function MistakesPage() {
           </section>
         </div>
       ) : null}
+
+      <GeneratePracticeModal
+        focusWords={selectedMistakeWords}
+        initialTopic={generatedTopic}
+        listTitle={generatedListTitle}
+        onClose={() => setGenerateModalOpen(false)}
+        onGenerated={handleGeneratedPracticeList}
+        open={generateModalOpen}
+      />
     </section>
   );
 }

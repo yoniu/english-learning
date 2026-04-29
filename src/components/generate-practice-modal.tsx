@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Loader2, Sparkles, X } from "lucide-react";
+
 import { generatePracticeItems } from "@/lib/ai";
 import { loadActiveProfileId, loadAiProfiles } from "@/lib/local-settings";
 import { createPracticeList } from "@/lib/storage";
@@ -26,12 +27,18 @@ type GeneratePracticeModalProps = {
   open: boolean;
   onClose: () => void;
   onGenerated: (list: PracticeList) => void;
+  focusWords?: string[];
+  initialTopic?: string;
+  listTitle?: string;
 };
 
 export function GeneratePracticeModal({
   open,
   onClose,
   onGenerated,
+  focusWords = [],
+  initialTopic,
+  listTitle,
 }: GeneratePracticeModalProps) {
   const [profiles, setProfiles] = useState<AiProfile[]>([]);
   const [activeProfileId, setActiveProfileId] = useState("");
@@ -43,6 +50,10 @@ export function GeneratePracticeModal({
 
   const activeProfile =
     profiles.find((profile) => profile.id === activeProfileId) ?? profiles[0];
+  const normalizedFocusWords = Array.from(
+    new Set(focusWords.map((word) => word.trim()).filter(Boolean)),
+  );
+  const hasFocusWords = normalizedFocusWords.length > 0;
 
   useEffect(() => {
     if (!open) {
@@ -51,8 +62,9 @@ export function GeneratePracticeModal({
 
     setProfiles(loadAiProfiles());
     setActiveProfileId(loadActiveProfileId());
+    setTopic(initialTopic?.trim() || "daily conversations");
     setError("");
-  }, [open]);
+  }, [initialTopic, open]);
 
   async function handleGenerate() {
     setError("");
@@ -74,6 +86,7 @@ export function GeneratePracticeModal({
         topic: topic.trim(),
         level,
         count: clampCount(count),
+        focusWords: normalizedFocusWords,
       });
 
       if (generated.length === 0) {
@@ -81,6 +94,7 @@ export function GeneratePracticeModal({
       }
 
       const { list } = await createPracticeList({
+        title: listTitle,
         topic: topic.trim(),
         level,
         items: generated,
@@ -129,12 +143,25 @@ export function GeneratePracticeModal({
             </div>
           </div>
 
+          {hasFocusWords ? (
+            <div className="form-field">
+              <span>错词范围</span>
+              <div className="field rounded-lg px-3 py-3 text-sm leading-6">
+                {normalizedFocusWords.join("、")}
+              </div>
+            </div>
+          ) : null}
+
           <label className="form-field">
             <span>练习主题</span>
             <input
               className="field rounded-lg px-3 py-2"
               onChange={(event) => setTopic(event.target.value)}
-              placeholder="例如 travel、interviews、cooking"
+              placeholder={
+                hasFocusWords
+                  ? "例如 mistakes review、daily review"
+                  : "例如 travel、interviews、cooking"
+              }
               value={topic}
             />
           </label>

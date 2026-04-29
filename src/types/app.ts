@@ -48,6 +48,7 @@ export type GenerationOptions = {
   topic: string;
   level: string;
   count: number;
+  focusWords?: string[];
 };
 
 export type MistakeAnalysis = {
