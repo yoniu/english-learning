@@ -16,8 +16,8 @@ const themeOptions: Array<{
   icon: typeof Monitor;
 }> = [
   { value: "system", label: "系统", title: "跟随系统", icon: Monitor },
-  { value: "light", label: "日间", title: "日间主题", icon: Sun },
-  { value: "dark", label: "夜间", title: "夜间主题", icon: Moon },
+  { value: "light", label: "浅色", title: "浅色主题", icon: Sun },
+  { value: "dark", label: "深色", title: "深色主题", icon: Moon },
 ];
 
 export function ThemeToggle() {

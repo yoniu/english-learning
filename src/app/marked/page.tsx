@@ -27,9 +27,7 @@ export default function MarkedPage() {
       })
       .catch((caughtError) =>
         setError(
-          caughtError instanceof Error
-            ? caughtError.message
-            : "读取标记内容失败。",
+          caughtError instanceof Error ? caughtError.message : "读取标记内容失败。",
         ),
       )
       .finally(() => setLoading(false));
@@ -52,55 +50,52 @@ export default function MarkedPage() {
   }
 
   return (
-    <section className="space-y-5">
-      <div className="panel rounded-lg p-5">
-        <div className="flex items-center gap-2">
-          <BookmarkCheck className="h-6 w-6 text-[var(--gold)]" />
-          <h2 className="text-2xl font-black">短语标记</h2>
+    <section className="page-stack">
+      <div className="page-hero">
+        <div>
+          <h1 className="page-hero-title">标记内容</h1>
+          <p className="page-hero-text">
+            这里集中展示你在练习中手动标记的短句和短语，方便回头强化记忆。
+          </p>
         </div>
-        <p className="mt-1 text-sm font-semibold text-[var(--muted)]">
-          这里集中展示练习中手动标记的短句和短语。
-        </p>
       </div>
 
-      {error ? (
-        <div className="rounded-lg border border-[rgba(200,84,56,0.28)] bg-[rgba(200,84,56,0.1)] p-4 text-sm font-bold text-[var(--coral)]">
-          {error}
-        </div>
-      ) : null}
+      {error ? <div className="state-banner error">{error}</div> : null}
 
       {loading ? (
-        <div className="panel flex min-h-[360px] items-center justify-center rounded-lg text-[var(--muted)]">
-          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-          正在读取标记
+        <div className="loading-state">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          <div>正在读取标记内容</div>
         </div>
       ) : markedItems.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {markedItems.map((item) => (
             <button
-              className="panel rounded-lg p-4 text-left transition hover:-translate-y-0.5 hover:bg-white/90"
+              className="list-card text-left"
               key={item.id}
               onClick={() => void startPractice(item)}
               type="button"
             >
-              <span className="rounded-full bg-[rgba(201,155,47,0.16)] px-3 py-1 text-xs font-black text-[var(--gold)]">
-                {item.kind === "sentence" ? "短句" : "短语"}
-              </span>
-              <span className="ml-2 text-xs font-bold text-[var(--muted)]">
-                {getListTitle(item.listId)}
-              </span>
-              <p className="mt-4 text-lg font-black leading-snug">
-                {item.text}
-              </p>
-              <p className="mt-2 text-sm font-semibold text-[var(--muted)]">
+              <div className="flex items-center gap-2">
+                <span className="kind-tag">
+                  {item.kind === "sentence" ? "短句" : "短语"}
+                </span>
+                <span className="text-xs font-medium text-[var(--muted)]">
+                  {getListTitle(item.listId)}
+                </span>
+              </div>
+              <p className="mt-4 text-lg font-semibold leading-8">{item.text}</p>
+              <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
                 {item.zhHint}
               </p>
             </button>
           ))}
         </div>
       ) : (
-        <div className="panel flex min-h-[360px] items-center justify-center rounded-lg p-6 text-center text-[var(--muted)]">
-          还没有标记内容。
+        <div className="empty-state">
+          <BookmarkCheck className="h-12 w-12 text-[var(--accent)]" />
+          <h2>还没有标记内容</h2>
+          <p>在练习页点击“标记”，这里就会自动收集起来。</p>
         </div>
       )}
     </section>

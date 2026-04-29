@@ -26,9 +26,9 @@ import {
 
 const navItems = [
   { href: "/", label: "练习列表", icon: ListChecks },
-  { href: "/practice", label: "练习", icon: Keyboard },
-  { href: "/marked", label: "短语标记", icon: BookmarkCheck },
-  { href: "/mistakes", label: "错词", icon: AlertCircle },
+  { href: "/practice", label: "开始练习", icon: Keyboard },
+  { href: "/marked", label: "标记内容", icon: BookmarkCheck },
+  { href: "/mistakes", label: "错词本", icon: AlertCircle },
   { href: "/settings", label: "设置", icon: Settings },
 ];
 
@@ -90,19 +90,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           }}
         />
       </div>
+
       <aside className="app-sidebar">
         <div className="sidebar-header">
           <Link className="brand-link" href="/" title="AI English Spelling">
             <span className="brand-mark">AI</span>
             <span className="side-label">
               <span className="brand-title">English Spelling</span>
-              <span className="brand-subtitle">主题生成，逐词拼写</span>
+              <span className="brand-subtitle">
+                AI 生成练习，逐词拼写，持续复盘
+              </span>
             </span>
           </Link>
           <button
             className="sidebar-toggle"
             onClick={toggleCollapsed}
-            title={collapsed ? "展开侧栏" : "收缩侧栏"}
+            title={collapsed ? "展开侧栏" : "收起侧栏"}
             type="button"
           >
             {collapsed ? (

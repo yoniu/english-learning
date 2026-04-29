@@ -19,7 +19,7 @@ const levelLabels: Record<string, string> = {
   beginner: "初级",
   intermediate: "中级",
   advanced: "高级",
-  unknown: "未知",
+  unknown: "未分类",
 };
 
 export default function PracticeListPage() {
@@ -46,60 +46,59 @@ export default function PracticeListPage() {
   }
 
   return (
-    <section className="space-y-5">
-      <div className="panel flex flex-col justify-between gap-4 rounded-lg p-5 sm:flex-row sm:items-center">
+    <section className="page-stack">
+      <div className="page-hero">
         <div>
-          <h2 className="text-2xl font-black">练习列表</h2>
-          <p className="mt-1 text-sm font-semibold text-[var(--muted)]">
-            每个列表是一组由 AI 生成的短句或短语集合。
+          <h1 className="page-hero-title">练习列表</h1>
+          <p className="page-hero-text">
+            每个练习列表都是一组由 AI 生成的短句或短语。先选一个主题，再进入拼写练习与错词复盘。
           </p>
         </div>
         <button
-          className="flex items-center justify-center gap-2 rounded-md bg-[var(--button)] px-5 py-3 font-black text-white transition hover:bg-[var(--button-hover)]"
+          className="primary-button"
           onClick={() => setModalOpen(true)}
           type="button"
         >
-          <Plus className="h-5 w-5" />
+          <Plus className="h-4 w-4" />
           生成练习列表
         </button>
       </div>
 
-      {error ? (
-        <div className="rounded-lg border border-[rgba(200,84,56,0.28)] bg-[rgba(200,84,56,0.1)] p-4 text-sm font-bold text-[var(--coral)]">
-          {error}
-        </div>
-      ) : null}
+      {error ? <div className="state-banner error">{error}</div> : null}
 
       {loading ? (
-        <div className="panel flex min-h-[360px] items-center justify-center rounded-lg text-[var(--muted)]">
-          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-          正在读取练习列表
+        <div className="loading-state">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          <div>正在读取练习列表</div>
         </div>
       ) : lists.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {lists.map((list) => (
-            <article className="panel rounded-lg p-4" key={list.id}>
+            <article className="list-card" key={list.id}>
               <div className="flex items-center justify-between gap-3">
-                <span className="rounded-full bg-[rgba(15,109,115,0.12)] px-3 py-1 text-xs font-black text-[var(--teal-dark)]">
+                <span className="subtle-tag">
                   {levelLabels[list.level] ?? list.level}
                 </span>
-                <Layers className="h-5 w-5 text-[var(--gold)]" />
+                <Layers className="h-5 w-5 text-[var(--accent)]" />
               </div>
-              <h3 className="mt-4 text-2xl font-black leading-snug">
+
+              <h2 className="mt-4 text-[1.4rem] font-semibold leading-8">
                 {list.title}
-              </h3>
-              <div className="mt-3 flex flex-wrap gap-2 text-sm font-semibold text-[var(--muted)]">
-                <span className="flex items-center gap-1 rounded-full border border-[rgba(23,49,45,0.12)] bg-white/55 px-3 py-1">
+              </h2>
+
+              <div className="meta-row mt-4">
+                <span className="meta-chip">
                   <BookmarkCheck className="h-4 w-4" />
-                  {list.itemCount} 条
+                  {list.itemCount} 条内容
                 </span>
-                <span className="flex items-center gap-1 rounded-full border border-[rgba(23,49,45,0.12)] bg-white/55 px-3 py-1">
+                <span className="meta-chip">
                   <CalendarDays className="h-4 w-4" />
                   {new Date(list.createdAt).toLocaleDateString()}
                 </span>
               </div>
+
               <Link
-                className="mt-5 flex w-full items-center justify-center gap-2 rounded-md bg-[var(--teal)] px-4 py-2.5 font-black text-white hover:bg-[var(--teal-dark)]"
+                className="primary-button mt-6 w-full"
                 href={`/practice?listId=${encodeURIComponent(list.id)}`}
                 onClick={() => void saveActivePracticeListId(list.id)}
               >
@@ -110,11 +109,11 @@ export default function PracticeListPage() {
           ))}
         </div>
       ) : (
-        <div className="panel flex min-h-[420px] flex-col items-center justify-center rounded-lg p-6 text-center">
-          <Database className="h-12 w-12 text-[var(--teal)]" />
-          <h2 className="mt-4 text-2xl font-black">暂无练习列表</h2>
-          <p className="mt-2 max-w-md text-[var(--muted)]">
-            点击“生成练习列表”，创建一个包含短句和短语的集合。
+        <div className="empty-state">
+          <Database className="h-12 w-12 text-[var(--accent)]" />
+          <h2>还没有练习列表</h2>
+          <p className="max-w-md">
+            点击“生成练习列表”，创建一组适合当前学习阶段的短句和短语。
           </p>
         </div>
       )}

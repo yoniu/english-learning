@@ -91,11 +91,12 @@ export default function PracticePage() {
     setWordStatuses({});
     setNotice("");
     setShowTextHint(false);
+
     if (hintTimerRef.current) {
       clearTimeout(hintTimerRef.current);
       hintTimerRef.current = null;
     }
-  }, [currentItem?.id]);
+  }, [currentItem?.id, tokens.length]);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -134,6 +135,7 @@ export default function PracticePage() {
   async function loadList(nextListId: string) {
     setLoading(true);
     setError("");
+
     const [storedList, storedItems, storedIndex] = await Promise.all([
       loadPracticeList(nextListId),
       loadPracticeItems(nextListId),
@@ -196,7 +198,7 @@ export default function PracticePage() {
           listId,
         })),
       );
-      setNotice("还有拼写需要修正，错词已记录。");
+      setNotice("还有拼写需要修正，错词已经记录到错词本。");
       return;
     }
 
@@ -204,7 +206,7 @@ export default function PracticePage() {
     await saveCurrentIndex(listId, nextIndex);
     setCurrentIndex(nextIndex);
     setNotice(
-      currentIndex + 1 >= items.length ? "已完成全部练习。" : "已进入下一条。",
+      currentIndex + 1 >= items.length ? "本组练习已完成。" : "已进入下一条练习。",
     );
   }
 
@@ -214,11 +216,11 @@ export default function PracticePage() {
     }
 
     setError("");
-    setNotice("正在播放英语提示。");
+    setNotice("正在播放英文提示。");
 
     try {
       await speakEnglishText(currentItem.text);
-      setNotice("已播放英语提示。");
+      setNotice("已播放英文提示。");
     } catch (caughtError) {
       setError(
         caughtError instanceof Error
@@ -271,25 +273,22 @@ export default function PracticePage() {
 
   if (loading) {
     return (
-      <section className="panel flex min-h-[520px] items-center justify-center rounded-lg text-[var(--muted)]">
-        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-        正在读取练习
+      <section className="loading-state">
+        <Loader2 className="h-5 w-5 animate-spin" />
+        <div>正在读取练习内容</div>
       </section>
     );
   }
 
   if (!list || !currentItem) {
     return (
-      <section className="panel flex min-h-[520px] flex-col items-center justify-center rounded-lg p-6 text-center">
-        <Database className="h-12 w-12 text-[var(--teal)]" />
-        <h2 className="mt-4 text-2xl font-black">没有找到练习列表</h2>
-        <p className="mt-2 max-w-md text-[var(--muted)]">
-          返回首页选择一个已有练习列表，或生成新的练习列表。
+      <section className="empty-state">
+        <Database className="h-12 w-12 text-[var(--accent)]" />
+        <h2>没有找到练习列表</h2>
+        <p className="max-w-md">
+          返回练习列表选择已有内容，或者先生成一组新的练习。
         </p>
-        <Link
-          className="mt-5 rounded-md bg-[var(--teal)] px-5 py-2.5 font-black text-white hover:bg-[var(--teal-dark)]"
-          href="/"
-        >
+        <Link className="primary-button mt-2" href="/">
           返回练习列表
         </Link>
       </section>
@@ -297,25 +296,25 @@ export default function PracticePage() {
   }
 
   return (
-    <section className="panel flex min-h-[640px] flex-col rounded-lg p-5 sm:p-6">
-      <div className="flex flex-col justify-between gap-4 border-b border-[rgba(23,49,45,0.12)] pb-4 sm:flex-row sm:items-start">
+    <section className="practice-shell">
+      <div className="practice-header">
         <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-[rgba(15,109,115,0.12)] px-3 py-1 text-sm font-bold text-[var(--teal-dark)]">
+          <div className="meta-row">
+            <span className="kind-tag">
               {currentItem.kind === "sentence" ? "短句" : "短语"}
             </span>
-            <span className="text-sm font-semibold text-[var(--muted)]">
-              {list.title}
-            </span>
-            <span className="text-sm font-semibold text-[var(--muted)]">
+            <span className="meta-chip">{list.title}</span>
+            <span className="meta-chip">
               {currentIndex + 1} / {items.length}
             </span>
           </div>
-          <p className="mt-3 text-2xl font-black leading-snug sm:text-4xl">
+
+          <p className="mt-5 text-3xl font-semibold leading-tight sm:text-4xl">
             {currentItem.zhHint}
           </p>
+
           {showTextHint ? (
-            <p className="mt-2 flex flex-wrap gap-x-1 gap-y-2 text-lg font-bold text-[var(--accent-strong)]">
+            <p className="mt-4 flex flex-wrap gap-x-1 gap-y-2 text-lg font-medium text-[var(--ink)]">
               {tokens.map((token, index) => {
                 const isMissing = !answers[index]?.trim();
 
@@ -323,7 +322,7 @@ export default function PracticePage() {
                   <span
                     className={
                       isMissing
-                        ? "rounded bg-[var(--mark-surface)] px-1 text-[var(--accent-strong)] ring-1 ring-[var(--line)]"
+                        ? "rounded-md bg-[var(--mark-surface)] px-1.5 py-0.5 ring-1 ring-[var(--line)]"
                         : "text-[var(--muted)]"
                     }
                     key={`${token.word}-hint-${index}`}
@@ -337,51 +336,53 @@ export default function PracticePage() {
           ) : null}
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="practice-tools">
           <button
-            className="practice-tool-button text-[var(--teal-dark)]"
+            className="practice-tool-button"
             onClick={() => void speakCurrentItem()}
             title="播放语音"
             type="button"
           >
-            <Volume2 className="h-5 w-5" />
+            <Volume2 className="h-4 w-4" />
             <span>播放</span>
             <kbd>Ctrl+S</kbd>
           </button>
+
           <button
-            className="practice-tool-button text-[var(--gold)]"
+            className="practice-tool-button"
             onClick={() => void toggleCurrentMark()}
             title="标记当前内容"
             type="button"
           >
             {currentItem.marked ? (
-              <BookmarkCheck className="h-5 w-5" />
+              <BookmarkCheck className="h-4 w-4" />
             ) : (
-              <Bookmark className="h-5 w-5" />
+              <Bookmark className="h-4 w-4" />
             )}
             <span>标记</span>
             <kbd>Ctrl+M</kbd>
           </button>
+
           <button
-            className="practice-tool-button text-[var(--muted)]"
+            className="practice-tool-button"
             onClick={revealTextHint}
             title="显示 5 秒英文提示"
             type="button"
           >
-            <Eye className="h-5 w-5" />
+            <Eye className="h-4 w-4" />
             <span>提示</span>
             <kbd>Ctrl+D</kbd>
           </button>
         </div>
       </div>
 
-      <div className="flex flex-1 content-start items-start gap-x-3 gap-y-5 py-8">
+      <div className="practice-body">
         <div className="flex flex-wrap items-end gap-x-3 gap-y-5">
           {tokens.map((token, index) => (
             <label className="flex items-end gap-1" key={`${token.word}-${index}`}>
               <input
                 aria-label={`word-${index + 1}`}
-                className={`word-input rounded-md px-3 py-3 text-lg font-black ${
+                className={`word-input px-3 py-3 text-lg font-semibold ${
                   wordStatuses[index] ?? ""
                 } ${
                   showTextHint && !answers[index]?.trim() ? "hint-missing" : ""
@@ -395,7 +396,7 @@ export default function PracticePage() {
                 value={answers[index] ?? ""}
               />
               {token.trailing ? (
-                <span className="pb-2 text-2xl font-black text-[var(--muted)]">
+                <span className="pb-2 text-2xl font-semibold text-[var(--muted)]">
                   {token.trailing}
                 </span>
               ) : null}
@@ -404,35 +405,35 @@ export default function PracticePage() {
         </div>
       </div>
 
-      {error ? (
-        <div className="mb-3 rounded-md border border-[rgba(200,84,56,0.28)] bg-[rgba(200,84,56,0.1)] p-3 text-sm font-bold text-[var(--coral)]">
-          {error}
-        </div>
-      ) : null}
+      {error ? <div className="state-banner error">{error}</div> : null}
 
-      <div className="flex flex-col gap-3 border-t border-[rgba(23,49,45,0.12)] pt-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-2 text-sm font-semibold text-[var(--muted)]">
+      <div className="practice-footer">
+        <div className="flex items-center gap-2 text-sm font-medium text-[var(--muted)]">
           <Keyboard className="h-4 w-4" />
-          {notice || "输入后失焦会即时校验，回车检查整条。"}
+          {notice || "输入后失焦可校验单词，按 Enter 检查整条内容。"}
         </div>
+
         <div className="flex flex-wrap gap-2">
           <button
-            className="rounded-md border border-[rgba(23,49,45,0.16)] bg-white/70 px-4 py-2 font-bold text-[var(--ink)] hover:bg-white disabled:opacity-50"
+            className="secondary-button"
             disabled={currentIndex === 0}
             onClick={() => goToItem(currentIndex - 1)}
             type="button"
           >
             上一条
           </button>
+
           <button
-            className="inline-flex items-center rounded-md bg-[var(--teal)] px-5 py-2 font-black text-white hover:bg-[var(--teal-dark)]"
+            className="primary-button"
             onClick={() => void checkCurrentItem()}
             type="button"
           >
-            检查<kbd className="shortcut-key ml-2">Enter</kbd>
+            检查
+            <kbd className="shortcut-key">Enter</kbd>
           </button>
+
           <button
-            className="rounded-md border border-[rgba(23,49,45,0.16)] bg-white/70 px-4 py-2 font-bold text-[var(--ink)] hover:bg-white disabled:opacity-50"
+            className="secondary-button"
             disabled={currentIndex >= items.length - 1}
             onClick={() => goToItem(currentIndex + 1)}
             type="button"

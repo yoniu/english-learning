@@ -4,10 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Loader2, Sparkles, X } from "lucide-react";
 import { generatePracticeItems } from "@/lib/ai";
-import {
-  loadActiveProfileId,
-  loadAiProfiles,
-} from "@/lib/local-settings";
+import { loadActiveProfileId, loadAiProfiles } from "@/lib/local-settings";
 import { createPracticeList } from "@/lib/storage";
 import type { AiProfile, PracticeList } from "@/types/app";
 
@@ -61,7 +58,7 @@ export function GeneratePracticeModal({
     setError("");
 
     if (!activeProfile) {
-      setError("请先到设置页面保存一个 AI 配置。");
+      setError("请先在设置页保存一个 AI 配置。");
       return;
     }
 
@@ -88,13 +85,12 @@ export function GeneratePracticeModal({
         level,
         items: generated,
       });
+
       onGenerated(list);
       onClose();
     } catch (caughtError) {
       setError(
-        caughtError instanceof Error
-          ? caughtError.message
-          : "生成练习内容失败。",
+        caughtError instanceof Error ? caughtError.message : "生成练习内容失败。",
       );
     } finally {
       setGenerating(false);
@@ -106,31 +102,29 @@ export function GeneratePracticeModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(23,49,45,0.42)] p-4">
-      <section className="panel w-full max-w-2xl rounded-lg p-6 shadow-2xl sm:p-7">
-        <div className="flex items-start justify-between gap-4">
+    <div className="modal-backdrop">
+      <section className="modal-surface max-w-2xl">
+        <div className="section-header">
           <div>
-            <p className="text-sm font-black uppercase tracking-[0.16em] text-[var(--muted)]">
-              Generate
+            <h2 className="section-title">生成练习集合</h2>
+            <p className="section-subtitle">
+              设定主题、难度和数量，系统会生成可直接进入练习的内容。
             </p>
-            <h2 className="mt-1 text-2xl font-black">生成练习集合</h2>
           </div>
           <button
-            className="rounded-md border border-[rgba(23,49,45,0.12)] bg-white/70 p-2 hover:bg-white"
+            className="icon-button"
             onClick={onClose}
-            type="button"
             title="关闭"
+            type="button"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="mt-7 space-y-5">
-          <div>
-            <label className="text-sm font-black text-[var(--muted)]">
-              当前 AI 配置
-            </label>
-            <div className="mt-2.5 rounded-md border border-[rgba(23,49,45,0.12)] bg-white/58 px-4 py-3 text-sm font-bold">
+        <div className="mt-6 space-y-5">
+          <div className="form-field">
+            <span>当前 AI 配置</span>
+            <div className="field flex items-center rounded-lg px-3 text-sm font-medium">
               {activeProfile ? activeProfile.name : "尚未配置"}
             </div>
           </div>
@@ -138,10 +132,10 @@ export function GeneratePracticeModal({
           <label className="form-field">
             <span>练习主题</span>
             <input
-              className="field rounded-md px-3 py-2"
-              placeholder="例如 travel, interviews, cooking"
-              value={topic}
+              className="field rounded-lg px-3 py-2"
               onChange={(event) => setTopic(event.target.value)}
+              placeholder="例如 travel、interviews、cooking"
+              value={topic}
             />
           </label>
 
@@ -149,9 +143,9 @@ export function GeneratePracticeModal({
             <label className="form-field">
               <span>难度等级</span>
               <select
-                className="field rounded-md px-3 py-2"
-                value={level}
+                className="field rounded-lg px-3 py-2"
                 onChange={(event) => setLevel(event.target.value)}
+                value={level}
               >
                 {levelOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -160,36 +154,34 @@ export function GeneratePracticeModal({
                 ))}
               </select>
             </label>
+
             <label className="form-field">
               <span>生成数量</span>
               <input
-                className="field rounded-md px-3 py-2"
+                className="field rounded-lg px-3 py-2"
                 max={20}
                 min={3}
-                type="number"
-                value={count}
                 onBlur={() => setCount((value) => clampCount(value))}
                 onChange={(event) => setCount(Number(event.target.value))}
+                type="number"
+                value={count}
               />
             </label>
           </div>
 
-          {error ? (
-            <div className="rounded-md border border-[rgba(200,84,56,0.28)] bg-[rgba(200,84,56,0.1)] p-3 text-sm font-bold text-[var(--coral)]">
-              {error}
-            </div>
-          ) : null}
+          {error ? <div className="state-banner error">{error}</div> : null}
 
           <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:items-center sm:justify-between">
             <Link
-              className="rounded-md border border-[rgba(23,49,45,0.14)] bg-white/70 px-4 py-3 text-center font-bold text-[var(--ink)] hover:bg-white"
+              className="secondary-button"
               href="/settings"
               onClick={onClose}
             >
               管理 AI 配置
             </Link>
+
             <button
-              className="flex items-center justify-center gap-2 rounded-md bg-[var(--button)] px-5 py-3 font-black text-white transition hover:bg-[var(--button-hover)] disabled:cursor-not-allowed disabled:opacity-60"
+              className="primary-button"
               disabled={generating}
               onClick={handleGenerate}
               type="button"
