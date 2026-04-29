@@ -58,6 +58,13 @@ function fallbackEvaluation(
   };
 }
 
+function buildAttemptText(answers: string[]): string {
+  return answers
+    .map((answer) => answer.trim())
+    .filter(Boolean)
+    .join(" ");
+}
+
 export default function PracticePage() {
   const router = useRouter();
   const [session, setSession] = useState<PracticeSession>();
@@ -72,16 +79,23 @@ export default function PracticePage() {
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
+  const [wrongCheckNotice, setWrongCheckNotice] = useState("");
   const [elapsedMs, setElapsedMs] = useState(0);
   const [wrongWordCount, setWrongWordCount] = useState(0);
   const [mistakenItemIds, setMistakenItemIds] = useState<string[]>([]);
+  const [wrongAttemptsByItemId, setWrongAttemptsByItemId] = useState<
+    Record<string, string>
+  >({});
   const [hintedItemIds, setHintedItemIds] = useState<string[]>([]);
   const [hintCountsByItemId, setHintCountsByItemId] = useState<Record<string, number>>({});
   const [finishing, setFinishing] = useState(false);
   const [completedRecord, setCompletedRecord] = useState<PracticeRecord>();
   const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
   const [pendingLeaveHref, setPendingLeaveHref] = useState("/");
+  const firstInputRef = useRef<HTMLInputElement | null>(null);
+  const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
   const hintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const wrongNoticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const frozenDurationMsRef = useRef<number | null>(null);
 
   const currentItem = items[currentIndex];
@@ -97,6 +111,9 @@ export default function PracticePage() {
     return () => {
       if (hintTimerRef.current) {
         clearTimeout(hintTimerRef.current);
+      }
+      if (wrongNoticeTimerRef.current) {
+        clearTimeout(wrongNoticeTimerRef.current);
       }
     };
   }, []);
@@ -143,9 +160,11 @@ export default function PracticePage() {
       setWordStatuses({});
       setWrongWordCount(0);
       setMistakenItemIds([]);
+      setWrongAttemptsByItemId({});
       setHintedItemIds([]);
       setHintCountsByItemId({});
       setNotice("");
+      setWrongCheckNotice("");
       setCompletedRecord(undefined);
       frozenDurationMsRef.current = null;
       setElapsedMs(Math.max(0, Date.now() - new Date(storedSession.startedAt).getTime()));
@@ -176,13 +195,44 @@ export default function PracticePage() {
     setAnswers(tokens.map(() => ""));
     setWordStatuses({});
     setNotice("");
+    setWrongCheckNotice("");
     setShowTextHint(false);
 
     if (hintTimerRef.current) {
       clearTimeout(hintTimerRef.current);
       hintTimerRef.current = null;
     }
+    if (wrongNoticeTimerRef.current) {
+      clearTimeout(wrongNoticeTimerRef.current);
+      wrongNoticeTimerRef.current = null;
+    }
   }, [currentItem?.id, tokens.length]);
+
+  useEffect(() => {
+    if (!currentItem || completedRecord || loading) {
+      return;
+    }
+
+    const focusTimer = window.setTimeout(() => {
+      firstInputRef.current?.focus();
+      firstInputRef.current?.select();
+    }, 0);
+
+    return () => window.clearTimeout(focusTimer);
+  }, [currentItem?.id, completedRecord, loading]);
+
+  function showWrongCheckNotice(message: string) {
+    setWrongCheckNotice(message);
+
+    if (wrongNoticeTimerRef.current) {
+      clearTimeout(wrongNoticeTimerRef.current);
+    }
+
+    wrongNoticeTimerRef.current = setTimeout(() => {
+      setWrongCheckNotice("");
+      wrongNoticeTimerRef.current = null;
+    }, 5000);
+  }
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -347,6 +397,11 @@ export default function PracticePage() {
       setMistakenItemIds((current) =>
         current.includes(currentItem.id) ? current : [...current, currentItem.id],
       );
+      setWrongAttemptsByItemId((current) => ({
+        ...current,
+        [currentItem.id]: buildAttemptText(answers),
+      }));
+      showWrongCheckNotice("检查发现拼写错误，已记录错词并自动标记当前句子。");
       setNotice("还有拼写需要修正，错词已经记录到错词本，错句已自动标记。");
       return;
     }
@@ -409,6 +464,7 @@ export default function PracticePage() {
           itemId,
           text: item.text,
           zhHint: item.zhHint,
+          userText: wrongAttemptsByItemId[itemId] ?? "",
         };
       })
       .filter(
@@ -418,6 +474,7 @@ export default function PracticePage() {
           itemId: string;
           text: string;
           zhHint: string;
+          userText: string;
         } => Boolean(item),
       );
     const hintCount = hintedItems.reduce((sum, item) => sum + item.count, 0);
@@ -445,6 +502,7 @@ export default function PracticePage() {
           wrongItems: wrongItems.map((item) => ({
             text: item.text,
             zhHint: item.zhHint,
+            userText: item.userText,
           })),
         });
       }
@@ -670,6 +728,7 @@ export default function PracticePage() {
                   {completedRecord.wrongItems.map((item) => (
                     <li key={`wrong-${item.itemId}`}>
                       - {item.text} / {item.zhHint}
+                      {item.userText ? ` -> 你的输入: ${item.userText}` : ""}
                     </li>
                   ))}
                 </ul>
@@ -808,11 +867,27 @@ export default function PracticePage() {
                   } ${
                     showTextHint && !answers[index]?.trim() ? "hint-missing" : ""
                   }`}
+                  ref={(element) => {
+                    inputRefs.current[index] = element;
+                    if (index === 0) {
+                      firstInputRef.current = element;
+                    }
+                  }}
                   onBlur={() => validateWord(index)}
                   onChange={(event) => {
                     const nextAnswers = [...answers];
                     nextAnswers[index] = event.target.value;
                     setAnswers(nextAnswers);
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key !== " " || index >= tokens.length - 1) {
+                      return;
+                    }
+
+                    event.preventDefault();
+                    const nextInput = inputRefs.current[index + 1];
+                    nextInput?.focus();
+                    nextInput?.select();
                   }}
                   value={answers[index] ?? ""}
                 />
@@ -827,6 +902,9 @@ export default function PracticePage() {
         </div>
 
         {error ? <div className="state-banner error">{error}</div> : null}
+        {wrongCheckNotice ? (
+          <div className="state-banner error">{wrongCheckNotice}</div>
+        ) : null}
 
         <div className="practice-footer">
           <div className="flex items-center gap-2 text-sm font-medium text-[var(--muted)]">

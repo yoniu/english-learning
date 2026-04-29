@@ -91,6 +91,7 @@ export type PracticeRecord = {
     itemId: string;
     text: string;
     zhHint: string;
+    userText?: string;
   }>;
   completedItemCount: number;
   evaluation?: PracticeEvaluation;

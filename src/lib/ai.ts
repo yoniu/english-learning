@@ -219,6 +219,7 @@ export async function generatePracticeEvaluation(
     wrongItems: Array<{
       text: string;
       zhHint: string;
+      userText?: string;
     }>;
   },
 ): Promise<PracticeEvaluation> {
@@ -259,12 +260,17 @@ export async function generatePracticeEvaluation(
             `Wrong items: ${
               params.wrongItems.length > 0
                 ? params.wrongItems
-                    .map((item) => `${item.text} (${item.zhHint})`)
+                    .map(
+                      (item) =>
+                        `${item.text} (${item.zhHint}) -> learner wrote: ${
+                          item.userText?.trim() || "unknown"
+                        }`,
+                    )
                     .join("; ")
                 : "none"
             }`,
             'Return exactly this JSON shape: {"summary":"one short Simplified Chinese summary","strengths":["two short Simplified Chinese bullets"],"improvements":["two short Simplified Chinese bullets"],"encouragement":"one short encouraging Simplified Chinese sentence"}',
-            "Be specific to the stats, hinted items, and wrong items. Keep each item concise and natural.",
+            "Be specific to the stats, hinted items, and wrong items. When learner input is provided, explain likely spelling confusions or missing words based on that input. Keep each item concise and natural.",
           ].join("\n"),
         },
       ],
