@@ -31,6 +31,7 @@ const defaultBackgroundSettings: BackgroundSettings = {
   imageUrl: "",
   blur: 0,
   scale: 1,
+  imageOpacity: 0.16,
   glassBlur: 10,
   glassOpacity: 0.86,
 };
@@ -308,6 +309,26 @@ export default function SettingsPage() {
                     }
                     type="range"
                     value={backgroundSettings.blur}
+                  />
+                </label>
+
+                <label className="form-field">
+                  <span>
+                    背景透明度：{Math.round(backgroundSettings.imageOpacity * 100)}%
+                  </span>
+                  <input
+                    className="accent-[var(--button)]"
+                    max={1}
+                    min={0}
+                    onChange={(event) =>
+                      updateBackgroundSettings({
+                        ...backgroundSettings,
+                        imageOpacity: Number(event.target.value),
+                      })
+                    }
+                    step={0.01}
+                    type="range"
+                    value={backgroundSettings.imageOpacity}
                   />
                 </label>
 

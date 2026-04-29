@@ -13,6 +13,7 @@ export type BackgroundSettings = {
   imageUrl: string;
   blur: number;
   scale: number;
+  imageOpacity: number;
   glassBlur: number;
   glassOpacity: number;
 };
@@ -24,6 +25,7 @@ const DEFAULT_BACKGROUND_SETTINGS: BackgroundSettings = {
   imageUrl: "",
   blur: 0,
   scale: 1,
+  imageOpacity: 0.16,
   glassBlur: 22,
   glassOpacity: 0.68,
 };
@@ -93,6 +95,7 @@ function normalizeBackgroundSettings(value: unknown): BackgroundSettings {
     imageUrl: typeof settings.imageUrl === "string" ? settings.imageUrl : "",
     blur: clampNumber(settings.blur, 0, 24),
     scale: clampNumber(settings.scale, 1, 1.4),
+    imageOpacity: clampNumber(settings.imageOpacity, 0, 1),
     glassBlur: clampNumber(settings.glassBlur, 0, 36),
     glassOpacity: clampNumber(settings.glassOpacity, 0.18, 0.95),
   };
@@ -252,6 +255,7 @@ export function applyBackgroundSettings(value: BackgroundSettings): void {
   );
   rootStyle.setProperty("--app-background-blur", `${settings.blur}px`);
   rootStyle.setProperty("--app-background-scale", String(settings.scale));
+  rootStyle.setProperty("--app-background-opacity", String(settings.imageOpacity));
   rootStyle.setProperty("--glass-blur", `${settings.glassBlur}px`);
   rootStyle.setProperty("--glass-opacity", String(settings.glassOpacity));
 

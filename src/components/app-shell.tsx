@@ -40,6 +40,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       imageUrl: "",
       blur: 0,
       scale: 1,
+      imageOpacity: 0.16,
       glassBlur: 22,
       glassOpacity: 0.68,
     });

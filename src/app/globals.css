@@ -38,6 +38,7 @@
   --app-background-image: none;
   --app-background-blur: 0px;
   --app-background-scale: 1;
+  --app-background-opacity: 0.16;
   --glass-blur: 10px;
   --glass-opacity: 0.86;
   --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.06);
@@ -245,7 +246,7 @@ a:focus-visible {
   background-repeat: no-repeat;
   background-size: cover;
   filter: blur(var(--app-background-blur));
-  opacity: 0.16;
+  opacity: var(--app-background-opacity);
   transform: scale(var(--app-background-scale));
 }
 
