@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   AlertCircle,
   CheckSquare,
@@ -10,7 +10,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+
 import { generateMistakeAnalyses } from "@/lib/ai";
 import { loadActiveProfileId, loadAiProfiles } from "@/lib/local-settings";
 import {
@@ -41,6 +41,7 @@ export default function MistakesPage() {
   const [deleting, setDeleting] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [confirmingDeleteIds, setConfirmingDeleteIds] = useState<string[]>([]);
+  const [pendingPracticeListId, setPendingPracticeListId] = useState("");
   const [startingListId, setStartingListId] = useState("");
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
@@ -48,9 +49,10 @@ export default function MistakesPage() {
   const activeProfile =
     profiles.find((profile) => profile.id === activeProfileId) ?? profiles[0];
 
-  const sortedMistakes = mistakes
-    .slice()
-    .sort((first, second) => second.count - first.count);
+  const sortedMistakes = useMemo(
+    () => mistakes.slice().sort((first, second) => second.count - first.count),
+    [mistakes],
+  );
   const pendingAnalysisCount = sortedMistakes.filter(
     (mistake) => !hasAiAnalysis(mistake),
   ).length;
@@ -75,7 +77,9 @@ export default function MistakesPage() {
       })
       .catch((caughtError) =>
         setError(
-          caughtError instanceof Error ? caughtError.message : "读取错词失败。",
+          caughtError instanceof Error
+            ? caughtError.message
+            : "读取错词内容失败，请稍后再试。",
         ),
       )
       .finally(() => setLoading(false));
@@ -106,14 +110,14 @@ export default function MistakesPage() {
     setNotice("");
 
     if (!activeProfile) {
-      setError("请先到设置页保存一个 AI 配置。");
+      setError("请先在设置页保存一个可用的 AI 配置。");
       return;
     }
 
     const targets = sortedMistakes.filter((mistake) => !hasAiAnalysis(mistake));
 
     if (targets.length === 0) {
-      setNotice("所有错词都已经生成过 AI 解析。");
+      setNotice("当前错词都已经生成过 AI 解析了。");
       return;
     }
 
@@ -140,9 +144,7 @@ export default function MistakesPage() {
       const nextMistakes = await saveMistakeAnalyses(updates);
       setMistakes(nextMistakes);
       setNotice(
-        `已生成 ${updates.length} 条错词解析，跳过 ${
-          sortedMistakes.length - targets.length
-        } 条已有解析的内容。`,
+        `已生成 ${updates.length} 条 AI 解析，已有解析的 ${sortedMistakes.length - targets.length} 条记录已跳过。`,
       );
     } catch (caughtError) {
       setError(
@@ -181,24 +183,29 @@ export default function MistakesPage() {
     }
   }
 
-  async function handleStartPractice(listId: string | undefined) {
-    if (!listId) {
+  async function handleStartPractice() {
+    if (!pendingPracticeListId) {
       return;
     }
 
     setError("");
-    setStartingListId(listId);
+    setStartingListId(pendingPracticeListId);
 
     try {
-      const session = await startPracticeSession(listId);
+      const session = await startPracticeSession(pendingPracticeListId);
       router.push(`/practice?sessionId=${encodeURIComponent(session.id)}`);
     } catch (caughtError) {
       setError(
         caughtError instanceof Error ? caughtError.message : "开始练习失败。",
       );
       setStartingListId("");
+      setPendingPracticeListId("");
     }
   }
+
+  const pendingPracticeTitle = pendingPracticeListId
+    ? getListTitle(pendingPracticeListId)
+    : "";
 
   return (
     <section className="page-stack">
@@ -303,42 +310,44 @@ export default function MistakesPage() {
                   </p>
                 </div>
               ) : (
-                <div className="state-banner mt-4">尚未生成 AI 解析</div>
+                <div className="state-banner info" style={{ marginTop: "16px" }}>
+                  尚未生成 AI 解析
+                </div>
               )}
 
               <p className="mt-4 text-sm text-[var(--muted)]">
-                最近输入：{mistake.word}
+                最近输入: {mistake.word}
               </p>
               <p className="mt-1 text-xs text-[var(--muted-soft)]">
                 {new Date(mistake.lastSeenAt).toLocaleString()}
               </p>
 
               {mistake.listId ? (
-                <button
-                  className="secondary-button mt-4"
-                  disabled={Boolean(startingListId)}
-                  onClick={() => void handleStartPractice(mistake.listId)}
-                  type="button"
+                <div
+                  style={{
+                    marginTop: "16px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "0",
+                  }}
                 >
-                  {startingListId === mistake.listId ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : null}
-                  开始该组练习
-                </button>
+                  <button
+                    className="secondary-button"
+                    disabled={Boolean(startingListId)}
+                    onClick={() => setPendingPracticeListId(mistake.listId ?? "")}
+                    type="button"
+                  >
+                    {startingListId === mistake.listId ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : null}
+                    {getListTitle(mistake.listId)}
+                  </button>
+                </div>
               ) : (
                 <p className="mt-4 text-sm font-medium text-[var(--muted)]">
-                  {getListTitle(mistake.listId)}
+                  暂无对应练习列表
                 </p>
               )}
-
-              {mistake.listId ? (
-                <Link
-                  className="mt-3 inline-flex text-sm text-[var(--accent)]"
-                  href="/"
-                >
-                  查看练习列表
-                </Link>
-              ) : null}
             </article>
           ))}
         </div>
@@ -395,6 +404,56 @@ export default function MistakesPage() {
                   <Trash2 className="h-4 w-4" />
                 )}
                 删除
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
+
+      {pendingPracticeListId ? (
+        <div className="modal-backdrop">
+          <section className="modal-surface max-w-md">
+            <div className="section-header">
+              <div>
+                <h2 className="section-title">开始这组练习</h2>
+                <p className="section-subtitle">
+                  每次进入都会重新打乱顺序并开始计时。要现在开始
+                  “{pendingPracticeTitle}” 吗？
+                </p>
+              </div>
+              <button
+                className="icon-button"
+                onClick={() => {
+                  if (!startingListId) {
+                    setPendingPracticeListId("");
+                  }
+                }}
+                title="关闭"
+                type="button"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <button
+                className="secondary-button"
+                disabled={Boolean(startingListId)}
+                onClick={() => setPendingPracticeListId("")}
+                type="button"
+              >
+                先不开始
+              </button>
+              <button
+                className="primary-button"
+                disabled={Boolean(startingListId)}
+                onClick={() => void handleStartPractice()}
+                type="button"
+              >
+                {startingListId ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : null}
+                开始这组练习
               </button>
             </div>
           </section>

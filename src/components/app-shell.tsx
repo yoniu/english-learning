@@ -8,12 +8,12 @@ import {
   AlertCircle,
   BookmarkCheck,
   ClipboardList,
-  Keyboard,
   ListChecks,
   PanelLeftClose,
   PanelLeftOpen,
   Settings,
 } from "lucide-react";
+
 import { ThemeToggle } from "@/components/theme-toggle";
 import {
   applyBackgroundSettings,
@@ -28,7 +28,6 @@ import {
 
 const navItems = [
   { href: "/", label: "练习列表", icon: ListChecks },
-  { href: "/practice", label: "开始练习", icon: Keyboard },
   { href: "/records", label: "练习记录", icon: ClipboardList },
   { href: "/marked", label: "标记内容", icon: BookmarkCheck },
   { href: "/mistakes", label: "错词本", icon: AlertCircle },
@@ -65,6 +64,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       BACKGROUND_SETTINGS_CHANGED_EVENT,
       handleBackgroundSettingsChanged,
     );
+
     return () =>
       window.removeEventListener(
         BACKGROUND_SETTINGS_CHANGED_EVENT,
