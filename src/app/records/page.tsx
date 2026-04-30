@@ -2,8 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
+  CalendarDays,
   ClipboardList,
   Clock3,
+  History,
   Loader2,
   Search,
   Sparkles,
@@ -26,8 +28,13 @@ function formatDateTime(value: string): string {
 
 function formatDuration(durationMs: number): string {
   const totalSeconds = Math.max(0, Math.round(durationMs / 1000));
-  const minutes = Math.floor(totalSeconds / 60);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = totalSeconds % 60;
+
+  if (hours > 0) {
+    return `${hours} 小时 ${minutes} 分 ${seconds} 秒`;
+  }
 
   if (minutes === 0) {
     return `${seconds} 秒`;
@@ -46,6 +53,32 @@ function normalizeRecord(record: PracticeRecord) {
     wrongSentenceCount: record.wrongSentenceCount ?? 0,
     completedItemCount: record.completedItemCount ?? 0,
   };
+}
+
+function getStartOfLocalDay(value: string): number {
+  const date = new Date(value);
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+}
+
+function formatPracticeDays(records: PracticeRecord[]): string {
+  if (records.length === 0) {
+    return "0 天";
+  }
+
+  const earliestDay = Math.min(
+    ...records.map((record) =>
+      getStartOfLocalDay(record.startedAt || record.completedAt),
+    ),
+  );
+  const today = new Date();
+  const todayStart = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate(),
+  ).getTime();
+  const dayMs = 24 * 60 * 60 * 1000;
+
+  return `${Math.max(1, Math.floor((todayStart - earliestDay) / dayMs) + 1)} 天`;
 }
 
 export default function RecordsPage() {
@@ -119,6 +152,34 @@ export default function RecordsPage() {
       });
   }, [records, search]);
 
+  const recordStats = useMemo(() => {
+    const normalizedRecords = records.map(normalizeRecord);
+    const totalDurationMs = normalizedRecords.reduce(
+      (total, record) => total + Math.max(0, record.durationMs || 0),
+      0,
+    );
+    const latestRecord = normalizedRecords.reduce<PracticeRecord | undefined>(
+      (latest, record) => {
+        if (!latest) {
+          return record;
+        }
+
+        return new Date(record.completedAt).getTime() >
+          new Date(latest.completedAt).getTime()
+          ? record
+          : latest;
+      },
+      undefined,
+    );
+
+    return {
+      totalDuration: formatDuration(totalDurationMs),
+      totalCount: normalizedRecords.length,
+      practiceDays: formatPracticeDays(normalizedRecords),
+      lastCompletedAt: latestRecord ? formatDateTime(latestRecord.completedAt) : "--",
+    };
+  }, [records]);
+
   return (
     <div className="page-stack">
       <section className="page-hero">
@@ -128,16 +189,70 @@ export default function RecordsPage() {
             用表格快速回看每次练习的耗时、提示、错词和 AI 评价。支持搜索，点开就能看完整详情。
           </p>
         </div>
-        <div className="meta-row">
-          <span className="meta-chip">
-            <ClipboardList size={16} />
-            共 {records.length} 条记录
-          </span>
-          <span className="meta-chip">
-            <Clock3 size={16} />
-            最近完成 {records[0] ? formatDateTime(records[0].completedAt) : "--"}
-          </span>
-        </div>
+      </section>
+
+      <section
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+          gap: "14px",
+        }}
+        aria-label="练习统计"
+      >
+        {[
+          {
+            label: "练习总时长",
+            value: recordStats.totalDuration,
+            icon: <Clock3 size={18} />,
+          },
+          {
+            label: "练习次数",
+            value: `${recordStats.totalCount} 次`,
+            icon: <ClipboardList size={18} />,
+          },
+          {
+            label: "练习天数",
+            value: recordStats.practiceDays,
+            icon: <CalendarDays size={18} />,
+          },
+          {
+            label: "最后练习时间",
+            value: recordStats.lastCompletedAt,
+            icon: <History size={18} />,
+          },
+        ].map((item) => (
+          <div
+            className="section-card"
+            key={item.label}
+            style={{
+              padding: "16px",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                color: "var(--muted)",
+                fontSize: "0.8125rem",
+                fontWeight: 700,
+              }}
+            >
+              {item.icon}
+              {item.label}
+            </div>
+            <div
+              style={{
+                marginTop: "10px",
+                fontSize: "1.2rem",
+                fontWeight: 800,
+                lineHeight: 1.35,
+              }}
+            >
+              {item.value}
+            </div>
+          </div>
+        ))}
       </section>
 
       <section className="section-card">
