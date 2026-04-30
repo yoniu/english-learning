@@ -654,45 +654,44 @@ export default function PracticePage() {
           </div>
         </div>
 
-        <div className="section-card">
-          <div className="grid gap-4 sm:grid-cols-4">
-            <div className="rounded-xl border border-[var(--line)] bg-[var(--paper-strong)] p-4">
-              <div className="flex items-center gap-2 text-sm text-[var(--muted)]">
-                <Clock3 className="h-4 w-4" />
-                练习耗时
-              </div>
-              <p className="mt-2 text-lg font-semibold">
-                {formatDuration(completedRecord.durationMs)}
-              </p>
+        <div className="grid gap-4 sm:grid-cols-4">
+          <div className="section-card p-4">
+            <div className="flex items-center gap-2 text-sm text-[var(--muted)]">
+              <Clock3 className="h-4 w-4" />
+              练习耗时
             </div>
-            <div className="rounded-xl border border-[var(--line)] bg-[var(--paper-strong)] p-4">
-              <div className="text-sm text-[var(--muted)]">提示次数</div>
-              <p className="mt-2 text-lg font-semibold">
-                {completedRecord.hintCount}
-              </p>
-            </div>
-            <div className="rounded-xl border border-[var(--line)] bg-[var(--paper-strong)] p-4">
-              <div className="text-sm text-[var(--muted)]">错词数量</div>
-              <p className="mt-2 text-lg font-semibold">
-                {completedRecord.wrongWordCount}
-              </p>
-            </div>
-            <div className="rounded-xl border border-[var(--line)] bg-[var(--paper-strong)] p-4">
-              <div className="text-sm text-[var(--muted)]">错句数量</div>
-              <p className="mt-2 text-lg font-semibold">
-                {completedRecord.wrongSentenceCount}
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-6 rounded-xl border border-[var(--line)] bg-[var(--paper-strong)] p-5">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-[var(--accent)]" />
-              <h2 className="text-lg font-semibold">AI 练习评价</h2>
-            </div>
-            <p className="mt-3 text-sm leading-6">
-              {completedRecord.evaluation?.summary}
+            <p className="mt-2 text-lg font-semibold">
+              {formatDuration(completedRecord.durationMs)}
             </p>
+          </div>
+          <div className="section-card p-4">
+            <div className="text-sm text-[var(--muted)]">提示次数</div>
+            <p className="mt-2 text-lg font-semibold">
+              {completedRecord.hintCount}
+            </p>
+          </div>
+          <div className="section-card p-4">
+            <div className="text-sm text-[var(--muted)]">错词数量</div>
+            <p className="mt-2 text-lg font-semibold">
+              {completedRecord.wrongWordCount}
+            </p>
+          </div>
+          <div className="section-card p-4">
+            <div className="text-sm text-[var(--muted)]">错句数量</div>
+            <p className="mt-2 text-lg font-semibold">
+              {completedRecord.wrongSentenceCount}
+            </p>
+          </div>
+        </div>
+
+        <div className="section-card">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-[var(--accent)]" />
+            <h2 className="text-lg font-semibold">AI 练习评价</h2>
+          </div>
+          <p className="mt-3 text-sm leading-6">
+            {completedRecord.evaluation?.summary}
+          </p>
 
             <div className="mt-4 grid gap-4 lg:grid-cols-2">
               <div>
@@ -743,16 +742,15 @@ export default function PracticePage() {
             <p className="mt-4 text-sm font-medium text-[var(--accent)]">
               {completedRecord.evaluation?.encouragement}
             </p>
-          </div>
+        </div>
 
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Link className="primary-button" href="/records">
-              查看练习记录
-            </Link>
-            <Link className="secondary-button" href="/">
-              开始新一轮练习
-            </Link>
-          </div>
+        <div className="flex flex-wrap gap-3">
+          <Link className="primary-button" href="/records">
+            查看练习记录
+          </Link>
+          <Link className="secondary-button" href="/">
+            开始新一轮练习
+          </Link>
         </div>
       </section>
     );
