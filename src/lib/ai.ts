@@ -38,6 +38,11 @@ type PracticeEvaluationPayload = {
   encouragement?: string;
 };
 
+type ChatMessage = {
+  role: "system" | "user" | "assistant";
+  content: string;
+};
+
 function buildChatCompletionsUrl(baseUrl: string): string {
   const cleanBaseUrl = baseUrl.trim().replace(/\/+$/, "");
 
@@ -58,14 +63,13 @@ function parseJson<T>(content: string): T {
   return JSON.parse(jsonText.trim()) as T;
 }
 
-export async function generatePracticeItems(
+async function requestChatCompletion(
   profile: AiProfile,
-  options: GenerationOptions,
-): Promise<GeneratedPracticeItem[]> {
-  const uniqueFocusWords = Array.from(
-    new Set(options.focusWords?.map((word) => word.trim()).filter(Boolean) ?? []),
-  );
-
+  options: {
+    temperature: number;
+    messages: ChatMessage[];
+  },
+): Promise<string> {
   const response = await fetch(buildChatCompletionsUrl(profile.baseUrl), {
     method: "POST",
     headers: {
@@ -74,33 +78,8 @@ export async function generatePracticeItems(
     },
     body: JSON.stringify({
       model: profile.model,
-      temperature: 0.7,
-      messages: [
-        {
-          role: "system",
-          content:
-            "You create English learning practice content. Return only valid JSON. Do not include markdown, comments, or extra text.",
-        },
-        {
-          role: "user",
-          content: [
-            `Topic: ${options.topic}`,
-            `Level: ${options.level}`,
-            `Count: ${options.count}`,
-            "Generate a mixed list of short English phrases and short English sentences for spelling practice.",
-            uniqueFocusWords.length > 0
-              ? `Target words: ${uniqueFocusWords.join(", ")}`
-              : "",
-            uniqueFocusWords.length > 0
-              ? "Every item must include at least one target word. Cover all target words where possible and focus on their common usage."
-              : "",
-            'Return exactly this JSON shape: {"items":[{"kind":"phrase"|"sentence","text":"English text","zhHint":"Chinese meaning"}]}',
-            "Use natural English, keep every item under 14 words, and make zhHint concise Simplified Chinese.",
-          ]
-            .filter(Boolean)
-            .join("\n"),
-        },
-      ],
+      temperature: options.temperature,
+      messages: options.messages,
     }),
   });
 
@@ -115,6 +94,68 @@ export async function generatePracticeItems(
   if (!content) {
     throw new Error("AI response did not include message content.");
   }
+
+  return content;
+}
+
+export async function testAiProfileAvailability(
+  profile: AiProfile,
+): Promise<string> {
+  const content = await requestChatCompletion(profile, {
+    temperature: 0,
+    messages: [
+      {
+        role: "system",
+        content:
+          "Reply with plain text only. Keep it very short and do not use markdown.",
+      },
+      {
+        role: "user",
+        content: 'Return exactly: OK',
+      },
+    ],
+  });
+
+  return content.trim();
+}
+
+export async function generatePracticeItems(
+  profile: AiProfile,
+  options: GenerationOptions,
+): Promise<GeneratedPracticeItem[]> {
+  const uniqueFocusWords = Array.from(
+    new Set(options.focusWords?.map((word) => word.trim()).filter(Boolean) ?? []),
+  );
+
+  const content = await requestChatCompletion(profile, {
+    temperature: 0.7,
+    messages: [
+      {
+        role: "system",
+        content:
+          "You create English learning practice content. Return only valid JSON. Do not include markdown, comments, or extra text.",
+      },
+      {
+        role: "user",
+        content: [
+          `Topic: ${options.topic}`,
+          `Level: ${options.level}`,
+          `Count: ${options.count}`,
+          "Generate a mixed list of short English phrases and short English sentences for spelling practice.",
+          uniqueFocusWords.length > 0
+            ? `Target words: ${uniqueFocusWords.join(", ")}`
+            : "",
+          uniqueFocusWords.length > 0
+            ? "Every item must include at least one target word. Cover all target words where possible and focus on their common usage."
+            : "",
+          'Return exactly this JSON shape: {"items":[{"kind":"phrase"|"sentence","text":"English text","zhHint":"Chinese meaning"}]}',
+          "Use natural English, keep every item under 14 words, and make zhHint concise Simplified Chinese.",
+        ]
+          .filter(Boolean)
+          .join("\n"),
+      },
+    ],
+  });
 
   const payload = parseJson<GeneratedPayload>(content);
   const generatedItems = payload.items;
@@ -153,45 +194,25 @@ export async function generateMistakeAnalyses(
     return {};
   }
 
-  const response = await fetch(buildChatCompletionsUrl(profile.baseUrl), {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${profile.apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: profile.model,
-      temperature: 0.2,
-      messages: [
-        {
-          role: "system",
-          content:
-            "You help Chinese learners understand English vocabulary. Return only valid JSON. Do not include markdown, comments, or extra text.",
-        },
-        {
-          role: "user",
-          content: [
-            "Analyze these English words for a wrong-words notebook.",
-            `Words: ${uniqueWords.join(", ")}`,
-            'Return exactly this JSON shape: {"items":[{"word":"original word","phonetic":"IPA phonetic with slashes","definition":"concise Simplified Chinese explanation","example":"short natural English example sentence"}]}',
-            "Keep definition concise, use Simplified Chinese, and keep each example under 14 words.",
-          ].join("\n"),
-        },
-      ],
-    }),
+  const content = await requestChatCompletion(profile, {
+    temperature: 0.2,
+    messages: [
+      {
+        role: "system",
+        content:
+          "You help Chinese learners understand English vocabulary. Return only valid JSON. Do not include markdown, comments, or extra text.",
+      },
+      {
+        role: "user",
+        content: [
+          "Analyze these English words for a wrong-words notebook.",
+          `Words: ${uniqueWords.join(", ")}`,
+          'Return exactly this JSON shape: {"items":[{"word":"original word","phonetic":"IPA phonetic with slashes","definition":"concise Simplified Chinese explanation","example":"short natural English example sentence"}]}',
+          "Keep definition concise, use Simplified Chinese, and keep each example under 14 words.",
+        ].join("\n"),
+      },
+    ],
   });
-
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(body || `AI request failed with status ${response.status}`);
-  }
-
-  const data = (await response.json()) as ChatCompletionResponse;
-  const content = data.choices?.[0]?.message?.content;
-
-  if (!content) {
-    throw new Error("AI response did not include message content.");
-  }
 
   const payload = parseJson<MistakeAnalysisPayload>(content);
   const analyses: Record<string, MistakeAnalysis> = {};
@@ -235,71 +256,49 @@ export async function generatePracticeEvaluation(
     }>;
   },
 ): Promise<PracticeEvaluation> {
-  const response = await fetch(buildChatCompletionsUrl(profile.baseUrl), {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${profile.apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: profile.model,
-      temperature: 0.4,
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are an English learning coach. Return only valid JSON. Do not include markdown, comments, or extra text.",
-        },
-        {
-          role: "user",
-          content: [
-            "Create a concise practice review for a Chinese learner.",
-            `Practice list: ${params.listTitle}`,
-            `Duration seconds: ${params.durationSeconds}`,
-            `Completed items: ${params.completedItemCount}`,
-            `Hint count: ${params.hintCount}`,
-            `Hinted items: ${
-              params.hintedItems.length > 0
-                ? params.hintedItems
-                    .map(
-                      (item) => `${item.text} (${item.zhHint}) x${item.count}`,
-                    )
-                    .join("; ")
-                : "none"
-            }`,
-            `Wrong word count: ${params.wrongWordCount}`,
-            `Wrong sentence count: ${params.wrongSentenceCount}`,
-            `Wrong items: ${
-              params.wrongItems.length > 0
-                ? params.wrongItems
-                    .map(
-                      (item) =>
-                        `${item.text} (${item.zhHint}) -> learner wrote: ${
-                          item.userText?.trim() || "unknown"
-                        }`,
-                    )
-                    .join("; ")
-                : "none"
-            }`,
-            'Return exactly this JSON shape: {"summary":"one short Simplified Chinese summary","strengths":["two short Simplified Chinese bullets"],"improvements":["two short Simplified Chinese bullets"],"encouragement":"one short encouraging Simplified Chinese sentence"}',
-            "Be specific to the stats, hinted items, and wrong items. When learner input is provided, explain likely spelling confusions or missing words based on that input. Keep each item concise and natural.",
-          ].join("\n"),
-        },
-      ],
-    }),
+  const content = await requestChatCompletion(profile, {
+    temperature: 0.4,
+    messages: [
+      {
+        role: "system",
+        content:
+          "You are an English learning coach. Return only valid JSON. Do not include markdown, comments, or extra text.",
+      },
+      {
+        role: "user",
+        content: [
+          "Create a concise practice review for a Chinese learner.",
+          `Practice list: ${params.listTitle}`,
+          `Duration seconds: ${params.durationSeconds}`,
+          `Completed items: ${params.completedItemCount}`,
+          `Hint count: ${params.hintCount}`,
+          `Hinted items: ${
+            params.hintedItems.length > 0
+              ? params.hintedItems
+                  .map((item) => `${item.text} (${item.zhHint}) x${item.count}`)
+                  .join("; ")
+              : "none"
+          }`,
+          `Wrong word count: ${params.wrongWordCount}`,
+          `Wrong sentence count: ${params.wrongSentenceCount}`,
+          `Wrong items: ${
+            params.wrongItems.length > 0
+              ? params.wrongItems
+                  .map(
+                    (item) =>
+                      `${item.text} (${item.zhHint}) -> learner wrote: ${
+                        item.userText?.trim() || "unknown"
+                      }`,
+                  )
+                  .join("; ")
+              : "none"
+          }`,
+          'Return exactly this JSON shape: {"summary":"one short Simplified Chinese summary","strengths":["two short Simplified Chinese bullets"],"improvements":["two short Simplified Chinese bullets"],"encouragement":"one short encouraging Simplified Chinese sentence"}',
+          "Be specific to the stats, hinted items, and wrong items. When learner input is provided, explain likely spelling confusions or missing words based on that input. Keep each item concise and natural.",
+        ].join("\n"),
+      },
+    ],
   });
-
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(body || `AI request failed with status ${response.status}`);
-  }
-
-  const data = (await response.json()) as ChatCompletionResponse;
-  const content = data.choices?.[0]?.message?.content;
-
-  if (!content) {
-    throw new Error("AI response did not include message content.");
-  }
 
   const payload = parseJson<PracticeEvaluationPayload>(content);
 

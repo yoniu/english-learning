@@ -7,12 +7,9 @@ export const metadata: Metadata = {
   title: "English Spelling AI",
   description: "AI-powered English phrase and sentence spelling practice.",
   icons: {
-    icon: [
-      { url: "/favicon.png", type: "image/png" },
-      { url: "/logo-transparent.png", type: "image/png" },
-    ],
-    shortcut: "/favicon.png",
-    apple: "/favicon.png",
+    icon: [{ url: "/new-logo.png", type: "image/png" }],
+    shortcut: "/new-logo.png",
+    apple: "/new-logo.png",
   },
 };
 

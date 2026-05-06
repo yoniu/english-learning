@@ -25,7 +25,7 @@ export default function AboutPage() {
               alt="English Spelling AI logo"
               height={84}
               priority
-              src="/logo-transparent.png"
+              src="/new-logo.png"
               width={84}
             />
           </div>

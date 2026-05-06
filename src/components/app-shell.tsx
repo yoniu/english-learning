@@ -104,7 +104,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 className="brand-logo-image"
                 height={46}
                 priority
-                src="/logo-transparent.png"
+                src="/new-logo.png"
                 width={46}
               />
             </span>

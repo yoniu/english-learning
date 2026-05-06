@@ -867,6 +867,48 @@ a:focus-visible {
   padding: 16px;
 }
 
+.config-item > div:last-child {
+  display: grid;
+  grid-template-columns: minmax(148px, 1fr) auto 42px;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 324px;
+  align-self: center;
+}
+
+.config-item > div:last-child > .secondary-button {
+  min-height: 44px;
+  padding-inline: 16px;
+  white-space: nowrap;
+}
+
+.config-item > div:last-child > .secondary-button:first-child {
+  min-width: 152px;
+  border-color: color-mix(in srgb, var(--accent) 22%, var(--line));
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--paper-strong) 92%, var(--surface) 8%),
+      color-mix(in srgb, var(--surface) 84%, var(--paper) 16%)
+    );
+}
+
+.config-item > div:last-child > .secondary-button:nth-child(2) {
+  min-width: 92px;
+}
+
+.config-item > div:last-child > .icon-button {
+  width: 42px;
+  height: 42px;
+  flex-basis: 42px;
+  border-radius: 12px;
+}
+
+.config-item > div:last-child > button:disabled {
+  opacity: 0.72;
+  box-shadow: none;
+}
+
 .divider-top {
   border-top: 1px solid var(--line);
   padding-top: 20px;
@@ -1075,6 +1117,12 @@ a:focus-visible {
     flex-direction: column;
   }
 
+  .config-item > div:last-child {
+    width: 100%;
+    grid-template-columns: minmax(0, 1fr) auto 42px;
+    flex: 1 1 auto;
+  }
+
   .about-meta-grid {
     grid-template-columns: 1fr;
   }
@@ -1108,6 +1156,15 @@ a:focus-visible {
 
   .practice-tools,
   .meta-row {
+    width: 100%;
+  }
+
+  .config-item > div:last-child {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .config-item > div:last-child > .icon-button {
+    grid-column: 1 / -1;
     width: 100%;
   }
 

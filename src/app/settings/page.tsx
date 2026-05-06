@@ -12,6 +12,7 @@ import {
   Settings,
 } from "lucide-react";
 import Link from "next/link";
+import { testAiProfileAvailability } from "@/lib/ai";
 import {
   applyBackgroundSettings,
   applyThemeColor,
@@ -77,6 +78,7 @@ export default function SettingsPage() {
   const [baseError, setBaseError] = useState("");
   const [aiNotice, setAiNotice] = useState("");
   const [aiError, setAiError] = useState("");
+  const [testingProfileId, setTestingProfileId] = useState("");
 
   const activeProfile =
     profiles.find((profile) => profile.id === activeProfileId) ?? profiles[0];
@@ -167,6 +169,25 @@ export default function SettingsPage() {
     saveActiveProfileId(profileId);
     setAiNotice("已切换当前 AI 配置。");
     setAiError("");
+  }
+
+  async function testProfile(profile: AiProfile) {
+    setTestingProfileId(profile.id);
+    setAiError("");
+    setAiNotice("");
+
+    try {
+      const result = await testAiProfileAvailability(profile);
+      setAiNotice(`${profile.name} 可用性测试成功${result ? `：${result}` : ""}`);
+    } catch (error) {
+      setAiError(
+        error instanceof Error
+          ? `${profile.name} 可用性测试失败：${error.message}`
+          : `${profile.name} 可用性测试失败。`,
+      );
+    } finally {
+      setTestingProfileId("");
+    }
   }
 
   function updateThemeColor(nextColor: string) {
@@ -533,6 +554,14 @@ export default function SettingsPage() {
                       </div>
 
                       <div className="flex gap-2">
+                        <button
+                          className="secondary-button"
+                          disabled={testingProfileId === profile.id}
+                          onClick={() => testProfile(profile)}
+                          type="button"
+                        >
+                          {testingProfileId === profile.id ? "测试中..." : "可用性测试"}
+                        </button>
                         <button
                           className="secondary-button"
                           onClick={() => switchProfile(profile.id)}
