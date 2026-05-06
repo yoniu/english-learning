@@ -21,8 +21,10 @@ import {
   BACKGROUND_SETTINGS_CHANGED_EVENT,
   type BackgroundSettings,
   loadBackgroundSettings,
+  loadMobileReminderDismissed,
   loadThemeColor,
   loadSidebarCollapsed,
+  saveMobileReminderDismissed,
   saveSidebarCollapsed,
 } from "@/lib/local-settings";
 
@@ -70,6 +72,30 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         BACKGROUND_SETTINGS_CHANGED_EVENT,
         handleBackgroundSettingsChanged,
       );
+  }, []);
+
+  useEffect(() => {
+    if (loadMobileReminderDismissed()) {
+      return;
+    }
+
+    const mobileNavigator = navigator as Navigator & {
+      userAgentData?: { mobile?: boolean };
+    };
+    const userAgent = navigator.userAgent.toLowerCase();
+    const isMobileUser =
+      mobileNavigator.userAgentData?.mobile ??
+      /android|iphone|ipad|ipod|iemobile|opera mini|mobile/i.test(userAgent);
+
+    if (!isMobileUser) {
+      return;
+    }
+
+    const confirmed = window.confirm("使用电脑访问效果更佳");
+
+    if (confirmed) {
+      saveMobileReminderDismissed(true);
+    }
   }, []);
 
   function toggleCollapsed() {

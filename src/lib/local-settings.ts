@@ -7,6 +7,8 @@ const THEME_MODE_KEY = "english-learning.themeMode";
 const THEME_COLOR_KEY = "english-learning.themeColor";
 const BACKGROUND_SETTINGS_KEY = "english-learning.backgroundSettings";
 const SIDEBAR_COLLAPSED_KEY = "english-learning.sidebarCollapsed";
+const MOBILE_REMINDER_DISMISSED_KEY =
+  "english-learning.mobileReminderDismissed";
 const DEFAULT_THEME_COLOR = "#525252";
 
 export type BackgroundSettings = {
@@ -282,4 +284,21 @@ export function loadSidebarCollapsed(): boolean {
 
 export function saveSidebarCollapsed(value: boolean): void {
   window.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(value));
+}
+
+export function loadMobileReminderDismissed(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return (
+    window.localStorage.getItem(MOBILE_REMINDER_DISMISSED_KEY) === "true"
+  );
+}
+
+export function saveMobileReminderDismissed(value: boolean): void {
+  window.localStorage.setItem(
+    MOBILE_REMINDER_DISMISSED_KEY,
+    String(value),
+  );
 }
